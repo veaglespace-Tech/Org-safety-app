@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model invitations {
+  id              Int                @id @default(autoincrement())
+  organization_id Int
+  email           String             @db.VarChar(255)
+  token           String             @unique(map: "token") @db.VarChar(255)
+  status          invitations_status @default(pending)
+  created_at      DateTime?          @default(now()) @db.Timestamp(0)
+  organizations   organizations      @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "invitations_ibfk_1")
+
+  @@index([organization_id], map: "organization_id")
+}
+
+model organizations {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(255)
+  email       String        @db.VarChar(255)
+  phone       String        @db.VarChar(50)
+  address     String        @db.Text
+  city        String        @db.VarChar(100)
+  state       String        @db.VarChar(100)
+  country     String        @db.VarChar(100)
+  logo        String?       @db.Text
+  created_at  DateTime?     @default(now()) @db.Timestamp(0)
+  invitations invitations[]
+  users       users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id              Int           @id @default(autoincrement())
+  organization_id Int?
+  name            String        @db.VarChar(255)
+  email           String        @unique(map: "email") @db.VarChar(255)
+  password_hash   String        @db.VarChar(255)
+  role            users_role    @default(member)
+  phone             String?       @db.VarChar(50)
+  emergency_contact String?       @db.VarChar(50)
+  city              String?       @db.VarChar(100)
+  gender            String?       @db.VarChar(20)
+  blood_group       String?       @db.VarChar(10)
+  current_address   String?       @db.Text
+  permanent_address String?       @db.Text
+  profile_photo     String?       @db.Text
+  created_at      DateTime?     @default(now()) @db.Timestamp(0)
+  organizations   organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "users_ibfk_1")
+
+  @@index([organization_id], map: "organization_id")
+}
+
+enum invitations_status {
+  pending
+  accepted
+}
+
+enum users_role {
+  admin
+  member
+  super_admin
+}
