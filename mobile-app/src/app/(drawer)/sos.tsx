@@ -6,19 +6,19 @@ import { useSelector } from 'react-redux';
 import { useTriggerSosMutation, useUpdateSosLocationMutation, useStopSosMutation } from '@/services/api/authApi';
 
 export default function SOSScreen() {
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state: any) => state.auth);
   
   const [triggerSos, { isLoading: isTriggering }] = useTriggerSosMutation();
   const [updateSosLocation] = useUpdateSosLocationMutation();
   const [stopSos, { isLoading: isStopping }] = useStopSosMutation();
 
   const [isSosActive, setIsSosActive] = useState(false);
-  const [location, setLocation] = useState(null);
-  const [locationErrorMsg, setLocationErrorMsg] = useState(null);
+  const [location, setLocation] = useState<any>(null);
+  const [locationErrorMsg, setLocationErrorMsg] = useState<string | null>(null);
   
   const progressAnim = useRef(new Animated.Value(0)).current;
-  const holdTimerRef = useRef(null);
-  const trackingIntervalRef = useRef(null);
+  const holdTimerRef = useRef<any>(null);
+  const trackingIntervalRef = useRef<any>(null);
   
   const HOLD_DURATION = 3000; // 3 seconds
 
@@ -31,15 +31,16 @@ export default function SOSScreen() {
       }
       
       try {
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         setLocation(loc);
       } catch (err) {
-        console.warn("Could not get initial location", err);
+        setLocationErrorMsg('Could not fetch initial location');
       }
     })();
 
     return () => {
       if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     };
   }, []);
 
@@ -75,27 +76,25 @@ export default function SOSScreen() {
   const handleSosTrigger = async () => {
     try {
       let locUrl = '';
-      if (location) {
+      if (location?.coords) {
         locUrl = `https://maps.google.com/?q=${location.coords.latitude},${location.coords.longitude}`;
       } else {
-        // Fallback fetch just in time
         try {
           let freshLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          setLocation(freshLoc);
           locUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
         } catch (e) {
           console.warn("Failed fresh loc fetch");
         }
       }
 
-      await triggerSos({ locationUrl: locUrl }).unwrap();
+      await (triggerSos as any)({ locationUrl: locUrl }).unwrap();
       
       setIsSosActive(true);
       Alert.alert("SOS Activated", "Emergency contacts have been notified.");
 
-      // Open WhatsApp and Phone Native Intents
       triggerNativeIntents(locUrl);
       
-      // Start background/interval tracking
       const sosIntervalMinutes = parseInt(process.env.EXPO_PUBLIC_SOS_INTERVAL_MINUTES || '1');
       
       if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
@@ -103,7 +102,7 @@ export default function SOSScreen() {
         try {
           let freshLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
           let newLocUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
-          await updateSosLocation({ locationUrl: newLocUrl }).unwrap();
+          await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
         } catch (e) {
           console.error("Failed to update SOS location", e);
         }
@@ -116,7 +115,7 @@ export default function SOSScreen() {
     }
   };
 
-  const triggerNativeIntents = (locUrl) => {
+  const triggerNativeIntents = (locUrl: string) => {
     const distressMessage = `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
 
 👤 Name: ${user?.name || 'Unknown'}
@@ -152,7 +151,7 @@ export default function SOSScreen() {
 
   const handleStopSos = async () => {
     try {
-      await stopSos().unwrap();
+      await (stopSos as any)({}).unwrap();
       setIsSosActive(false);
       progressAnim.setValue(0);
       if (trackingIntervalRef.current) {
@@ -174,7 +173,7 @@ export default function SOSScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white items-center justify-center p-6">
       <Text className="text-3xl font-bold text-gray-900 mb-2">
-        Tiuizi Surksha
+        तिची सुरक्षा (SOS)
       </Text>
       <Text className="text-gray-500 mb-12 text-center px-4">
         Hold the button for 3 seconds to trigger an emergency SOS alert.

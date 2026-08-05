@@ -25,8 +25,11 @@ const isLocalHost = (hostname) => {
 
 export const API_BASE_URL = CONFIG_API_BASE_URL;
 
-const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE_URL,
+const LIVE_API_URL = process.env.EXPO_PUBLIC_LIVE_API_URL || "https://tichisuraksha.veaglespace.com/api";
+let useLiveApi = false;
+
+const getBaseQuery = (isLive) => fetchBaseQuery({
+  baseUrl: isLive ? LIVE_API_URL : API_BASE_URL,
   credentials: "include",
   cache: "no-store",
   prepareHeaders: (headers) => {
@@ -35,6 +38,9 @@ const rawBaseQuery = fetchBaseQuery({
     return headers;
   },
 });
+
+const localBaseQuery = getBaseQuery(false);
+const liveBaseQuery = getBaseQuery(true);
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
 
@@ -107,7 +113,20 @@ const handleUnauthorizedSession = (api, args) => {
 };
 
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
-  const result = await rawBaseQuery(args, api, extraOptions);
+  let result;
+
+  if (useLiveApi) {
+    result = await liveBaseQuery(args, api, extraOptions);
+  } else {
+    result = await localBaseQuery(args, api, extraOptions);
+    
+    // If local fetch fails, switch to live API and retry
+    if (result?.error?.status === "FETCH_ERROR") {
+      console.warn("Local API failed, switching to live API:", LIVE_API_URL);
+      useLiveApi = true;
+      result = await liveBaseQuery(args, api, extraOptions);
+    }
+  }
 
   if (result?.error) {
     const statusCode = Number(result.error.status || result.error.originalStatus || 0);

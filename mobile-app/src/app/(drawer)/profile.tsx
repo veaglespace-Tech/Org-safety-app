@@ -255,7 +255,17 @@ export default function ProfileSettingsPage() {
   );
 }
 
-function InputField({ label, value, onChangeText, icon, keyboardType, secureTextEntry, placeholder, multiline, borderColor = "border-slate-200" }) {
+function InputField({
+  label,
+  value,
+  onChangeText,
+  icon = null,
+  keyboardType = 'default',
+  secureTextEntry = false,
+  placeholder = '',
+  multiline = false,
+  borderColor = 'border-slate-200',
+}: any) {
   return (
     <View className="mb-4">
       <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</Text>
