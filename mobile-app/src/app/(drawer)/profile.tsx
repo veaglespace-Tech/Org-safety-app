@@ -19,6 +19,7 @@ import {
   Building2,
   Camera,
   HeartPulse,
+  Palette,
 } from 'lucide-react-native';
 
 import { authApi } from '@/services/api/authApi';
@@ -29,6 +30,8 @@ import { TextInput } from '@/components/ui/TextInput';
 import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
 import { Button } from '@/components/ui/Button';
 import { ROLES } from '@/utils/roles';
+import { useAppTheme } from '@/context/ThemeContext';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GENDERS = [
@@ -40,6 +43,7 @@ const GENDERS = [
 export default function ProfileSettingsPage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state: any) => state.auth);
+  const { isDark } = useAppTheme();
 
   const { data: meData, refetch } = authApi.useGetMeQuery(undefined, {
     refetchOnMountOrArgChange: true,
@@ -195,19 +199,23 @@ export default function ProfileSettingsPage() {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
       {/* Tabs Header */}
       {isAdmin && (
-        <View className="flex-row px-5 pt-4 pb-2">
+        <View className="flex-row px-5 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <TouchableOpacity
             onPress={() => setActiveTab('profile')}
             className={`flex-1 items-center pb-3 border-b-2 ${
-              activeTab === 'profile' ? 'border-blue-600' : 'border-transparent'
+              activeTab === 'profile'
+                ? 'border-blue-600 dark:border-blue-500'
+                : 'border-transparent'
             }`}
           >
             <Text
-              className={`font-bold text-sm ${
-                activeTab === 'profile' ? 'text-blue-600' : 'text-slate-500'
+              className={`font-extrabold text-sm ${
+                activeTab === 'profile'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               Personal Settings
@@ -216,12 +224,16 @@ export default function ProfileSettingsPage() {
           <TouchableOpacity
             onPress={() => setActiveTab('org')}
             className={`flex-1 items-center pb-3 border-b-2 ${
-              activeTab === 'org' ? 'border-blue-600' : 'border-transparent'
+              activeTab === 'org'
+                ? 'border-blue-600 dark:border-blue-500'
+                : 'border-transparent'
             }`}
           >
             <Text
-              className={`font-bold text-sm ${
-                activeTab === 'org' ? 'text-blue-600' : 'text-slate-500'
+              className={`font-extrabold text-sm ${
+                activeTab === 'org'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               Organization Data
@@ -235,6 +247,26 @@ export default function ProfileSettingsPage() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Appearance Card */}
+        <SurfaceCard className="p-5 mb-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 items-center justify-center">
+                <Palette size={20} color="#6366f1" />
+              </View>
+              <View>
+                <Text className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  Theme & Appearance
+                </Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {isDark ? 'Dark mode is active' : 'Light mode is active'}
+                </Text>
+              </View>
+            </View>
+            <ThemeToggle variant="pill" />
+          </View>
+        </SurfaceCard>
+
         {activeTab === 'profile' ? (
           <SurfaceCard className="p-5">
             {/* Profile Avatar Selection */}
@@ -242,18 +274,18 @@ export default function ProfileSettingsPage() {
               <TouchableOpacity
                 onPress={pickProfileImage}
                 activeOpacity={0.8}
-                className="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 items-center justify-center overflow-hidden relative"
+                className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 items-center justify-center overflow-hidden relative"
               >
                 {formData.profilePhoto ? (
                   <Image source={{ uri: formData.profilePhoto }} style={{ width: 96, height: 96 }} />
                 ) : (
-                  <User size={40} color="#94a3b8" />
+                  <User size={40} color={isDark ? '#94a3b8' : '#64748b'} />
                 )}
-                <View className="absolute bottom-0 w-full bg-black/40 py-1 items-center">
+                <View className="absolute bottom-0 w-full bg-black/50 py-1 items-center">
                   <Camera size={14} color="#fff" />
                 </View>
               </TouchableOpacity>
-              <Text className="text-slate-500 text-xs font-medium mt-2">Tap to change photo</Text>
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-2">Tap to change photo</Text>
             </View>
 
             <TextInput
@@ -261,7 +293,7 @@ export default function ProfileSettingsPage() {
               required
               value={formData.name}
               onChangeText={(t) => setFormData((p) => ({ ...p, name: t }))}
-              leftIcon={<User size={16} color="#64748b" />}
+              leftIcon={<User size={16} color={isDark ? '#94a3b8' : '#64748b'} />}
             />
 
             <TextInput
@@ -269,7 +301,7 @@ export default function ProfileSettingsPage() {
               required
               value={formData.email}
               editable={false} // Prevent changing email freely
-              leftIcon={<Mail size={16} color="#64748b" />}
+              leftIcon={<Mail size={16} color={isDark ? '#94a3b8' : '#64748b'} />}
               helpText="Contact admin to change your registered email address."
             />
 
@@ -292,7 +324,7 @@ export default function ProfileSettingsPage() {
 
             {/* Gender Selection */}
             <View className="mb-4">
-              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Gender</Text>
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">Gender</Text>
               <View className="flex-row gap-2">
                 {GENDERS.map((g) => {
                   const isSelected = formData.gender === g.value;
@@ -303,12 +335,12 @@ export default function ProfileSettingsPage() {
                       className={`flex-1 py-2.5 rounded-xl border items-center ${
                         isSelected
                           ? 'bg-blue-600 border-blue-600 shadow-sm'
-                          : 'bg-white border-slate-200'
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       <Text
                         className={`text-xs font-bold ${
-                          isSelected ? 'text-white' : 'text-slate-700'
+                          isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         {g.label}
@@ -321,7 +353,7 @@ export default function ProfileSettingsPage() {
 
             {/* Blood Group */}
             <View className="mb-4">
-              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Blood Group</Text>
+              <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">Blood Group</Text>
               <View className="flex-row flex-wrap gap-2">
                 {BLOOD_GROUPS.map((bg) => {
                   const isSelected = formData.bloodGroup === bg;
@@ -332,12 +364,12 @@ export default function ProfileSettingsPage() {
                       className={`px-3 py-1.5 rounded-lg border ${
                         isSelected
                           ? 'bg-red-600 border-red-600 shadow-sm'
-                          : 'bg-white border-slate-200'
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                       }`}
                     >
                       <Text
                         className={`text-xs font-bold ${
-                          isSelected ? 'text-white' : 'text-slate-700'
+                          isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         {bg}
@@ -352,7 +384,7 @@ export default function ProfileSettingsPage() {
               label="City"
               value={formData.city}
               onChangeText={(t) => setFormData((p) => ({ ...p, city: t }))}
-              leftIcon={<MapPin size={16} color="#64748b" />}
+              leftIcon={<MapPin size={16} color={isDark ? '#94a3b8' : '#64748b'} />}
             />
 
             <TextInput
@@ -361,7 +393,7 @@ export default function ProfileSettingsPage() {
               value={formData.password}
               onChangeText={(t) => setFormData((p) => ({ ...p, password: t }))}
               isPassword
-              leftIcon={<Lock size={16} color="#64748b" />}
+              leftIcon={<Lock size={16} color={isDark ? '#94a3b8' : '#64748b'} />}
             />
 
             <Button
@@ -378,13 +410,13 @@ export default function ProfileSettingsPage() {
           </SurfaceCard>
         ) : (
           <SurfaceCard className="p-5">
-            <View className="flex-row items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-              <View className="w-12 h-12 rounded-2xl bg-indigo-50 items-center justify-center border border-indigo-100">
-                <Building2 size={24} color="#4f46e5" />
+            <View className="flex-row items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 items-center justify-center border border-indigo-100 dark:border-indigo-900/40">
+                <Building2 size={24} color="#6366f1" />
               </View>
               <View>
-                <Text className="text-lg font-black text-slate-900">Organization Settings</Text>
-                <Text className="text-xs text-slate-500 font-medium mt-0.5">
+                <Text className="text-lg font-black text-slate-900 dark:text-white">Organization Settings</Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                   Update primary registration details
                 </Text>
               </View>

@@ -5,29 +5,22 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Redirect, router, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
+  LayoutDashboard,
   Shield,
-  Home,
   User,
-  Users,
   LogOut,
   Settings,
-  CalendarCheck,
-  UserPlus,
-  UsersRound,
-  Bell,
-  Package,
-  Wallet,
-  BarChart3,
-  Crown,
-  Ticket,
 } from 'lucide-react-native';
 import { logout } from '@/store/slices/authSlice';
 import { ROLES, formatRoleLabel } from '@/utils/roles';
+import { useAppTheme } from '@/context/ThemeContext';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
-function CustomDrawerContent(props) {
+function CustomDrawerContent(props: any) {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const pathname = usePathname();
+  const { isDark } = useAppTheme();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -41,91 +34,163 @@ function CustomDrawerContent(props) {
     role === ROLES.SUPER_ADMIN ||
     role === ROLES.SUB_ADMIN;
 
+  const dashboardRoute = isAdmin
+    ? '/(drawer)/admin/dashboard'
+    : '/(drawer)/member/dashboard';
+
   const navItems = [
-    ...(isAdmin
-      ? [
-          { label: 'Dashboard', route: '/(drawer)/admin/dashboard', icon: Home, color: '#4f46e5' },
-          { label: 'Attendance & Geofence', route: '/(drawer)/admin/attendance', icon: CalendarCheck, color: '#059669' },
-          { label: 'Requests Hub', route: '/(drawer)/admin/requests', icon: UserPlus, color: '#d97706' },
-          { label: 'Members Directory', route: '/(drawer)/admin/members', icon: Users, color: '#3b82f6' },
-          { label: 'Teams & Pods', route: '/(drawer)/admin/teams', icon: UsersRound, color: '#8b5cf6' },
-          { label: 'Posts & Polls', route: '/(drawer)/admin/posts', icon: Bell, color: '#ec4899' },
-          { label: 'Instruments Inventory', route: '/(drawer)/admin/instruments', icon: Package, color: '#f97316' },
-          { label: 'Funds & Expenses', route: '/(drawer)/admin/expenses', icon: Wallet, color: '#10b981' },
-          { label: 'Reports & Analytics', route: '/(drawer)/admin/reports', icon: BarChart3, color: '#6366f1' },
-          { label: 'Subscription Plan', route: '/(drawer)/admin/subscription', icon: Crown, color: '#eab308' },
-        ]
-      : [
-          { label: 'Dashboard', route: '/(drawer)/member/dashboard', icon: Home, color: '#4f46e5' },
-          { label: 'Mark Attendance', route: '/(drawer)/member/attendance', icon: CalendarCheck, color: '#059669' },
-          { label: 'Announcements & Polls', route: '/(drawer)/member/posts', icon: Bell, color: '#ec4899' },
-          { label: 'My Instruments', route: '/(drawer)/member/instruments', icon: Package, color: '#f97316' },
-          { label: 'Expense Claims', route: '/(drawer)/member/expenses', icon: Wallet, color: '#10b981' },
-        ]),
-    { label: 'तिची सुरक्षा (SOS)', route: '/(drawer)/sos', icon: Shield, color: '#ef4444' },
-    { label: 'Partner Coupons', route: '/(drawer)/coupons', icon: Ticket, color: '#8b5cf6' },
-    { label: 'Profile Settings', route: '/(drawer)/profile', icon: Settings, color: '#64748b' },
+    {
+      label: 'Dashboard',
+      route: dashboardRoute,
+      icon: LayoutDashboard,
+      color: '#3b82f6',
+    },
+    {
+      label: 'तिची सुरक्षा',
+      route: '/(drawer)/sos',
+      icon: Shield,
+      color: '#ef4444',
+    },
+    {
+      label: 'Profile Settings',
+      route: '/(drawer)/profile',
+      icon: Settings,
+      color: '#94a3b8',
+    },
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? '#070e1e' : '#ffffff',
+      }}
+    >
       {/* User Profile Header */}
-      <View className="bg-indigo-600 px-5 pt-14 pb-6">
+      <View
+        className={`px-5 pt-14 pb-6 border-b ${
+          isDark
+            ? 'bg-slate-900/90 border-slate-800'
+            : 'bg-slate-50 border-slate-200'
+        }`}
+      >
         <View className="flex-row items-center gap-3">
-          <View className="w-14 h-14 rounded-2xl bg-white/20 overflow-hidden items-center justify-center border-2 border-white/30">
-            {user?.profilePhoto ? (
-              <Image source={{ uri: user.profilePhoto }} style={{ width: 56, height: 56 }} />
+          <View
+            className={`w-14 h-14 rounded-2xl overflow-hidden items-center justify-center border-2 ${
+              isDark
+                ? 'bg-slate-800 border-slate-700'
+                : 'bg-white border-slate-200 shadow-sm'
+            }`}
+          >
+            {user?.profilePhoto || user?.profile_photo ? (
+              <Image
+                source={{ uri: user.profilePhoto || user.profile_photo }}
+                style={{ width: 56, height: 56 }}
+              />
             ) : (
-              <User color="#fff" size={28} />
+              <User color={isDark ? '#94a3b8' : '#64748b'} size={28} />
             )}
           </View>
           <View className="flex-1">
-            <Text className="text-white font-black text-lg" numberOfLines={1}>
+            <Text
+              className={`font-black text-lg ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}
+              numberOfLines={1}
+            >
               {user?.name || 'User'}
             </Text>
-            <Text className="text-indigo-200 text-xs font-medium" numberOfLines={1}>
+            <Text
+              className={`text-xs font-medium ${
+                isDark ? 'text-slate-400' : 'text-slate-500'
+              }`}
+              numberOfLines={1}
+            >
               {user?.email}
             </Text>
-            <View className="mt-1 bg-white/20 self-start px-2 py-0.5 rounded-md">
-              <Text className="text-white text-[10px] font-bold uppercase tracking-wider">
+            <View
+              className={`mt-1 self-start px-2 py-0.5 rounded-md border ${
+                isDark
+                  ? 'bg-blue-600/20 border-blue-500/30'
+                  : 'bg-blue-50 border-blue-200'
+              }`}
+            >
+              <Text className="text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider">
                 {formatRoleLabel(user?.role)}
               </Text>
             </View>
           </View>
         </View>
-        {user?.organization?.name && (
-          <View className="mt-3 flex-row items-center gap-2 bg-white/10 rounded-xl px-3 py-2">
-            {user?.organization?.logo ? (
+
+        {(user?.organization?.name || user?.organizations?.name) && (
+          <View
+            className={`mt-3.5 flex-row items-center gap-2 rounded-xl px-3 py-2 border ${
+              isDark
+                ? 'bg-slate-800/90 border-slate-700'
+                : 'bg-white border-slate-200 shadow-sm'
+            }`}
+          >
+            {user?.organization?.logo || user?.organizations?.logo ? (
               <Image
-                source={{ uri: user.organization.logo }}
+                source={{
+                  uri: user?.organization?.logo || user?.organizations?.logo,
+                }}
                 style={{ width: 24, height: 24, borderRadius: 6 }}
               />
             ) : null}
-            <Text className="text-white/90 text-xs font-bold" numberOfLines={1}>
-              {user.organization.name}
+            <Text
+              className={`text-xs font-bold ${
+                isDark ? 'text-slate-200' : 'text-slate-800'
+              }`}
+              numberOfLines={1}
+            >
+              {user?.organization?.name || user?.organizations?.name}
             </Text>
           </View>
         )}
       </View>
 
-      {/* Nav Items */}
-      <ScrollView style={{ flex: 1, paddingTop: 8 }}>
+      {/* Exactly 3 Nav Items */}
+      <ScrollView style={{ flex: 1, paddingTop: 14 }}>
         {navItems.map((item) => {
-          const isActive = pathname === item.route || pathname?.startsWith(item.route);
+          const isActive =
+            item.label === 'Dashboard'
+              ? pathname?.includes('/dashboard') || pathname === dashboardRoute
+              : pathname === item.route || pathname?.startsWith(item.route);
+
           const IconComp = item.icon;
           return (
             <Pressable
-              key={item.route}
+              key={item.label}
               onPress={() => router.push(item.route as any)}
-              className={`flex-row items-center gap-3 mx-3 my-1 px-4 py-3 rounded-xl ${
-                isActive ? 'bg-indigo-50' : ''
+              className={`flex-row items-center gap-3.5 mx-3 my-1 px-4 py-3.5 rounded-2xl ${
+                isActive
+                  ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
+                  : isDark
+                  ? 'active:bg-slate-800/80'
+                  : 'active:bg-slate-100'
               }`}
-              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
             >
-              <IconComp color={isActive ? '#4f46e5' : item.color} size={20} />
+              <IconComp
+                color={
+                  isActive
+                    ? '#ffffff'
+                    : isDark
+                    ? item.color
+                    : item.color === '#94a3b8'
+                    ? '#64748b'
+                    : item.color
+                }
+                size={20}
+              />
               <Text
-                className={`font-bold text-sm ${
-                  isActive ? 'text-indigo-600' : 'text-slate-700'
+                className={`font-extrabold text-sm ${
+                  isActive
+                    ? 'text-white'
+                    : isDark
+                    ? 'text-slate-300'
+                    : 'text-slate-700'
                 }`}
               >
                 {item.label}
@@ -136,14 +201,24 @@ function CustomDrawerContent(props) {
       </ScrollView>
 
       {/* Logout */}
-      <View className="border-t border-slate-100 p-4">
+      <View
+        className={`p-4 border-t ${
+          isDark ? 'border-slate-800/80' : 'border-slate-100'
+        }`}
+      >
         <Pressable
           onPress={handleLogout}
-          className="flex-row items-center gap-3 px-4 py-3 rounded-xl bg-red-50"
+          className={`flex-row items-center gap-3 px-4 py-3.5 rounded-2xl border ${
+            isDark
+              ? 'bg-red-500/10 border-red-500/20'
+              : 'bg-red-50 border-red-100'
+          }`}
           style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
         >
           <LogOut color="#ef4444" size={20} />
-          <Text className="text-red-600 font-bold text-sm">Sign Out</Text>
+          <Text className="text-red-600 dark:text-red-400 font-extrabold text-sm">
+            Sign Out
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -152,6 +227,7 @@ function CustomDrawerContent(props) {
 
 export default function DrawerLayout() {
   const { user, loading } = useSelector((state: any) => state.auth);
+  const { isDark } = useAppTheme();
 
   if (loading) {
     return null;
@@ -168,164 +244,58 @@ export default function DrawerLayout() {
         screenOptions={{
           headerShown: true,
           drawerStyle: {
-            backgroundColor: '#ffffff',
-            width: 310,
+            backgroundColor: isDark ? '#070e1e' : '#ffffff',
+            width: 300,
           },
           headerTitleStyle: {
             fontWeight: '800',
             fontSize: 18,
+            color: isDark ? '#ffffff' : '#0f172a',
           },
-          headerTintColor: '#0f172a',
+          headerTintColor: isDark ? '#ffffff' : '#0f172a',
           headerStyle: {
-            backgroundColor: '#ffffff',
+            backgroundColor: isDark ? '#0b1329' : '#ffffff',
+            borderBottomColor: isDark ? '#1e293b' : '#e2e8f0',
+            borderBottomWidth: 1,
           },
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/(drawer)/sos')}
-              className="mr-4 bg-red-50 w-9 h-9 rounded-full items-center justify-center border border-red-100"
-            >
-              <Shield color="#ef4444" size={18} />
-            </Pressable>
+            <View className="flex-row items-center gap-2 mr-4">
+              <ThemeToggle />
+              <Pressable
+                onPress={() => router.push('/(drawer)/sos')}
+                className="bg-red-500/10 w-9 h-9 rounded-full items-center justify-center border border-red-500/30"
+              >
+                <Shield color="#ef4444" size={18} />
+              </Pressable>
+            </View>
           ),
         }}
       >
         <Drawer.Screen
           name="admin/dashboard"
           options={{
-            headerTitle: 'Organization Dashboard',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/attendance"
-          options={{
-            headerTitle: 'Org Attendance',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/requests"
-          options={{
-            headerTitle: 'Requests Hub',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/members"
-          options={{
-            headerTitle: 'Members Directory',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/users/[userId]"
-          options={{
-            headerTitle: 'Member Details',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/teams/index"
-          options={{
-            headerTitle: 'Teams & Pods',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/teams/[teamId]"
-          options={{
-            headerTitle: 'Team Details',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/posts"
-          options={{
-            headerTitle: 'Posts & Polls',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/instruments"
-          options={{
-            headerTitle: 'Instruments Inventory',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/expenses"
-          options={{
-            headerTitle: 'Funds & Expenses',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/reports"
-          options={{
-            headerTitle: 'Analytics & Reports',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="admin/subscription"
-          options={{
-            headerTitle: 'Subscription Plan',
+            headerTitle: 'Dashboard',
             drawerItemStyle: { display: 'none' },
           }}
         />
         <Drawer.Screen
           name="member/dashboard"
           options={{
-            headerTitle: 'My Dashboard',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="member/attendance"
-          options={{
-            headerTitle: 'Mark Attendance',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="member/posts"
-          options={{
-            headerTitle: 'Announcements',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="member/instruments"
-          options={{
-            headerTitle: 'My Instruments',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="member/expenses"
-          options={{
-            headerTitle: 'Expense Claims',
+            headerTitle: 'Dashboard',
             drawerItemStyle: { display: 'none' },
           }}
         />
         <Drawer.Screen
           name="sos"
           options={{
-            headerTitle: 'Emergency SOS',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="coupons"
-          options={{
-            headerTitle: 'Partner Coupons',
+            headerTitle: 'तिची सुरक्षा',
             drawerItemStyle: { display: 'none' },
           }}
         />
         <Drawer.Screen
           name="profile"
           options={{
-            headerTitle: 'Account Settings',
+            headerTitle: 'Profile Settings',
             drawerItemStyle: { display: 'none' },
           }}
         />

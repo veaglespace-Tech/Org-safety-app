@@ -50,32 +50,32 @@ export function CountryPhoneField({
   return (
     <View className={`mb-4 ${containerClassName}`}>
       {label && (
-        <Text className="text-sm font-bold text-slate-700 mb-1.5 ml-1">
+        <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1.5 ml-1">
           {label} {required && <Text className="text-red-500">*</Text>}
         </Text>
       )}
 
       <View
-        className={`flex-row items-center bg-white border-2 rounded-2xl overflow-hidden transition-all ${
+        className={`flex-row items-center bg-white dark:bg-slate-900 border-2 rounded-2xl overflow-hidden transition-all ${
           hasError
-            ? 'border-red-400 bg-red-50/20'
-            : 'border-slate-200 focus:border-blue-600'
+            ? 'border-red-400 bg-red-50/20 dark:border-red-500 dark:bg-red-950/20'
+            : 'border-slate-200 dark:border-slate-700 focus:border-blue-600 dark:focus:border-blue-500'
         }`}
       >
         <View className="pl-3.5 pr-2 py-3">
-          <Phone size={18} color={hasError ? '#ef4444' : '#64748b'} />
+          <Phone size={18} color={hasError ? '#ef4444' : '#94a3b8'} />
         </View>
 
         {/* Country Code Trigger */}
         <TouchableOpacity
           onPress={() => !disabled && setModalVisible(true)}
           disabled={disabled}
-          className="flex-row items-center border-r border-slate-200 pr-3 pl-1 py-3 gap-1"
+          className="flex-row items-center border-r border-slate-200 dark:border-slate-700 pr-3 pl-1 py-3 gap-1"
         >
-          <Text className="text-xs font-bold text-slate-900">
+          <Text className="text-xs font-bold text-slate-900 dark:text-white">
             {selectedOption.iso} {selectedOption.code}
           </Text>
-          <ChevronDown size={14} color="#64748b" />
+          <ChevronDown size={14} color="#94a3b8" />
         </TouchableOpacity>
 
         {/* Phone Input */}
@@ -86,7 +86,7 @@ export function CountryPhoneField({
           placeholderTextColor="#94a3b8"
           keyboardType="phone-pad"
           editable={!disabled}
-          className="flex-1 px-3 py-3 text-slate-900 font-medium text-sm"
+          className="flex-1 px-3 py-3 text-slate-900 dark:text-white font-medium text-sm"
         />
       </View>
 
@@ -95,19 +95,19 @@ export function CountryPhoneField({
           {phoneError || countryCodeError}
         </Text>
       ) : helpText ? (
-        <Text className="text-slate-400 text-xs font-medium mt-1 ml-1">
+        <Text className="text-slate-400 dark:text-slate-500 text-xs font-medium mt-1 ml-1">
           {helpText}
         </Text>
       ) : null}
 
       {/* Country Code Selection Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <SafeAreaView className="flex-1 justify-end bg-black/50">
-          <View className="bg-white rounded-t-3xl p-5 max-h-[70%]">
-            <View className="flex-row justify-between items-center pb-4 border-b border-slate-100 mb-2">
-              <Text className="text-lg font-bold text-slate-900">Select Country Code</Text>
+        <SafeAreaView className="flex-1 justify-end bg-black/60">
+          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-5 max-h-[70%] border-t border-slate-200 dark:border-slate-800">
+            <View className="flex-row justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-2">
+              <Text className="text-lg font-bold text-slate-900 dark:text-white">Select Country Code</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} className="p-1">
-                <X size={20} color="#64748b" />
+                <X size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
@@ -120,18 +120,20 @@ export function CountryPhoneField({
                   <TouchableOpacity
                     onPress={() => handleSelectCountry(item.code)}
                     className={`flex-row justify-between items-center p-3.5 rounded-xl mb-1 ${
-                      isSelected ? 'bg-blue-50' : 'active:bg-slate-50'
+                      isSelected
+                        ? 'bg-blue-50 dark:bg-blue-900/30'
+                        : 'active:bg-slate-50 dark:active:bg-slate-800'
                     }`}
                   >
                     <View className="flex-row items-center gap-2.5">
-                      <View className="w-8 h-6 bg-slate-100 rounded items-center justify-center border border-slate-200">
-                        <Text className="text-[11px] font-bold text-slate-700">{item.iso}</Text>
+                      <View className="w-8 h-6 bg-slate-100 dark:bg-slate-800 rounded items-center justify-center border border-slate-200 dark:border-slate-700">
+                        <Text className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{item.iso}</Text>
                       </View>
-                      <Text className="text-sm font-semibold text-slate-800">{item.label}</Text>
+                      <Text className="text-sm font-semibold text-slate-800 dark:text-slate-200">{item.label}</Text>
                     </View>
                     <View className="flex-row items-center gap-2">
-                      <Text className="text-sm font-bold text-blue-600 font-mono">{item.code}</Text>
-                      {isSelected && <Check size={16} color="#2563eb" />}
+                      <Text className="text-sm font-bold text-blue-600 dark:text-blue-400 font-mono">{item.code}</Text>
+                      {isSelected && <Check size={16} color="#3b82f6" />}
                     </View>
                   </TouchableOpacity>
                 );

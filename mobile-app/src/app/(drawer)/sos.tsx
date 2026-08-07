@@ -1,250 +1,806 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, SafeAreaView, Pressable, Animated, Linking, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+  Image,
+  Animated,
+  Linking,
+  Alert,
+  Platform,
+} from 'react-native';
 import * as Location from 'expo-location';
-import { Shield, MapPin, Loader2, Phone, MessageCircle } from 'lucide-react-native';
+import {
+  Shield,
+  AlertTriangle,
+  Phone,
+  MessageCircle,
+  Mail,
+  MapPin,
+  RefreshCw,
+  ExternalLink,
+  User,
+  Building2,
+  Info,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react-native';
 import { useSelector } from 'react-redux';
-import { useTriggerSosMutation, useUpdateSosLocationMutation, useStopSosMutation } from '@/services/api/authApi';
+import {
+  useTriggerSosMutation,
+  useUpdateSosLocationMutation,
+  useStopSosMutation,
+} from '@/services/api/authApi';
+import { useAppTheme } from '@/context/ThemeContext';
+import { AppFooter } from '@/components/layout/Footer';
 
 export default function SOSScreen() {
   const { user } = useSelector((state: any) => state.auth);
-  
+  const { isDark } = useAppTheme();
+
   const [triggerSos, { isLoading: isTriggering }] = useTriggerSosMutation();
   const [updateSosLocation] = useUpdateSosLocationMutation();
   const [stopSos, { isLoading: isStopping }] = useStopSosMutation();
 
   const [isSosActive, setIsSosActive] = useState(false);
-  const [location, setLocation] = useState<any>(null);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [tapWarning, setTapWarning] = useState<string | null>(null);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    accuracy: number;
+  } | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
   const [locationErrorMsg, setLocationErrorMsg] = useState<string | null>(null);
-  
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const holdTimerRef = useRef<any>(null);
-  const trackingIntervalRef = useRef<any>(null);
-  
-  const HOLD_DURATION = 3000; // 3 seconds
 
-  useEffect(() => {
-    (async () => {
+  // Hold State & Timers (Strict 3-Second Hold)
+  const [isHolding, setIsHolding] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdTimerRef = useRef<any>(null);
+  const progressTimerRef = useRef<any>(null);
+  const trackingIntervalRef = useRef<any>(null);
+  const holdCompletedRef = useRef<boolean>(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const HOLD_DURATION = 3000; // 3.0 Seconds Hold Required
+  const INTERVAL_STEP = 50;
+
+  // Fetch Location
+  const fetchLocation = async () => {
+    setLocLoading(true);
+    setLocationErrorMsg(null);
+    try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setLocationErrorMsg('Permission to access location was denied');
+        setLocationErrorMsg('Location permission denied');
+        setLocLoading(false);
         return;
       }
-      
-      try {
-        let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setLocation(loc);
-      } catch (err) {
-        setLocationErrorMsg('Could not fetch initial location');
-      }
-    })();
+
+      let loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      setLocation({
+        lat: loc.coords.latitude,
+        lng: loc.coords.longitude,
+        accuracy: loc.coords.accuracy || 10,
+      });
+    } catch (err: any) {
+      console.warn('Could not fetch location:', err?.message || err);
+      setLocationErrorMsg('Could not fetch location');
+    } finally {
+      setLocLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocation();
+
+    // Subtle pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.08,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
 
     return () => {
-      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
     };
   }, []);
 
+  // Hold Start / Cancel Handlers
   const startHold = () => {
     if (isSosActive || isTriggering || isStopping) return;
-    
-    Animated.timing(progressAnim, {
-      toValue: 1,
-      duration: HOLD_DURATION,
-      useNativeDriver: false,
-    }).start();
+    setTapWarning(null);
+    setIsHolding(true);
+    setHoldProgress(0);
+    holdCompletedRef.current = false;
+
+    const startTime = Date.now();
+
+    progressTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / HOLD_DURATION) * 100, 100);
+      setHoldProgress(progress);
+    }, INTERVAL_STEP);
 
     holdTimerRef.current = setTimeout(() => {
-      handleSosTrigger();
+      clearInterval(progressTimerRef.current);
+      holdCompletedRef.current = true;
+      setIsHolding(false);
+      setHoldProgress(100);
+      handleTriggerSos();
     }, HOLD_DURATION);
   };
 
   const cancelHold = () => {
-    if (isSosActive) return;
-    
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-    
-    Animated.timing(progressAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleSosTrigger = async () => {
-    try {
-      let locUrl = '';
-      if (location?.coords) {
-        locUrl = `https://maps.google.com/?q=${location.coords.latitude},${location.coords.longitude}`;
-      } else {
-        try {
-          let freshLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-          setLocation(freshLoc);
-          locUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
-        } catch (e) {
-          console.warn("Failed fresh loc fetch");
-        }
+    if (!isSosActive) {
+      // If user released before completing 3 seconds, show friendly warning
+      if (isHolding && !holdCompletedRef.current && holdProgress < 95) {
+        setTapWarning('Hold for 3 full seconds to activate SOS.');
       }
-
-      await (triggerSos as any)({ locationUrl: locUrl }).unwrap();
-      
-      setIsSosActive(true);
-      Alert.alert("SOS Activated", "Emergency contacts have been notified.");
-
-      triggerNativeIntents(locUrl);
-      
-      const sosIntervalMinutes = parseInt(process.env.EXPO_PUBLIC_SOS_INTERVAL_MINUTES || '1');
-      
-      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
-      trackingIntervalRef.current = setInterval(async () => {
-        try {
-          let freshLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-          let newLocUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
-          await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
-        } catch (e) {
-          console.error("Failed to update SOS location", e);
-        }
-      }, sosIntervalMinutes * 60 * 1000);
-      
-    } catch (err) {
-      console.error("SOS Trigger Failed", err);
-      Alert.alert("Error", "Could not trigger SOS. Check connection.");
-      progressAnim.setValue(0);
+      setIsHolding(false);
+      setHoldProgress(0);
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     }
   };
 
-  const triggerNativeIntents = (locUrl: string) => {
-    const distressMessage = `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
+  // Build Distress Message
+  const getDistressMessage = (locUrl: string) => {
+    return `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
 
 👤 Name: ${user?.name || 'Unknown'}
 📧 Email: ${user?.email || 'Unknown'}
 📞 Phone: ${user?.phone || 'Not provided'}
-🚨 Emergency Contact: ${user?.emergencyContact || 'Not provided'}
+🚨 Emergency Contact: ${user?.emergencyContact || user?.emergency_contact || 'Not provided'}
+🏢 Organization: ${user?.organization?.name || user?.organizations?.name || 'Safety Portal'}
 
-📍 LATEST LIVE LOCATION: ${locUrl || 'Not available'}`;
+📍 LATEST LIVE GPS LOCATION:
+${locUrl || 'Location coordinates not available'}
 
-    const emContactStr = user?.emergencyContact ? String(user.emergencyContact) : '';
-    const whatsappNumber = emContactStr.replace(/\D/g, '');
-    
-    if (whatsappNumber) {
-      const whatsappUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(distressMessage)}`;
-      Linking.canOpenURL(whatsappUrl).then(supported => {
-        if (supported) {
-          Linking.openURL(whatsappUrl);
-        } else {
-          console.warn("WhatsApp is not installed");
+⚠️ Immediate emergency assistance requested! Please check immediately.`;
+  };
+
+  // Direct Emergency Channels Dispatch (WhatsApp + Phone Call)
+  const triggerDirectEmergencyChannels = (locUrl: string) => {
+    const distressMessage = getDistressMessage(locUrl);
+    const parentOrEmergency = user?.emergencyContact || user?.emergency_contact;
+    const parentNumberStr = parentOrEmergency ? String(parentOrEmergency).replace(/\D/g, '') : '';
+    const emergencyNumber = parentNumberStr || '112';
+
+    // 1. WhatsApp Dispatch to Parent/Emergency Contact
+    const waUrl = parentNumberStr
+      ? `https://wa.me/${parentNumberStr}?text=${encodeURIComponent(distressMessage)}`
+      : `https://wa.me/?text=${encodeURIComponent(distressMessage)}`;
+
+    Linking.openURL(waUrl).catch((err) => console.warn('Could not open WhatsApp:', err));
+
+    // 2. Direct Phone Call to Parent / Emergency Number
+    setTimeout(() => {
+      Linking.openURL(`tel:${emergencyNumber}`).catch((err) =>
+        console.warn('Could not trigger phone dialer:', err)
+      );
+    }, 1200);
+  };
+
+  // SOS Action Triggers (Awakened after 3-second hold)
+  const handleTriggerSos = async () => {
+    setIsHolding(false);
+    setHoldProgress(0);
+    setTapWarning(null);
+
+    try {
+      setStatus('idle');
+      let locUrl = location
+        ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+        : '';
+
+      if (!locUrl) {
+        try {
+          const freshLoc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          locUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
+          setLocation({
+            lat: freshLoc.coords.latitude,
+            lng: freshLoc.coords.longitude,
+            accuracy: freshLoc.coords.accuracy || 10,
+          });
+        } catch (e) {
+          console.warn('Fallback location fetch error:', e);
         }
-      });
-    }
+      }
 
-    if (emContactStr) {
-      const phoneUrl = `tel:${emContactStr}`;
-      Linking.canOpenURL(phoneUrl).then(supported => {
-        if (supported) {
-          Linking.openURL(phoneUrl);
+      // 1. Dispatch SOS to backend server (Sends automated Hostinger SMTP emails to police/admins/CC)
+      await (triggerSos as any)({ locationUrl: locUrl }).unwrap();
+
+      setStatus('success');
+      setIsSosActive(true);
+
+      // 2. Automatically launch WhatsApp & Phone Call to Parent/Emergency contact
+      triggerDirectEmergencyChannels(locUrl);
+
+      // 3. Setup periodic location email updates after particular time interval (e.g. 5 minutes)
+      const rawInterval = process.env.EXPO_PUBLIC_SOS_INTERVAL_MINUTES || '5';
+      const sosIntervalMinutes = parseInt(rawInterval, 10) || 5;
+
+      trackingIntervalRef.current = setInterval(async () => {
+        try {
+          let updatedLoc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          let newLocUrl = `https://maps.google.com/?q=${updatedLoc.coords.latitude},${updatedLoc.coords.longitude}`;
+          await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
+        } catch (e) {
+          console.error('Failed to send periodic SOS location update', e);
         }
-      });
+      }, sosIntervalMinutes * 60 * 1000);
+    } catch (err) {
+      console.error('SOS Trigger Failed', err);
+      setStatus('error');
+      // Even if backend email fails, trigger device direct channels for safety!
+      const fallbackLocUrl = location
+        ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+        : '';
+      triggerDirectEmergencyChannels(fallbackLocUrl);
+      Alert.alert(
+        'Emergency Alert Dispatched',
+        'Direct emergency channels (WhatsApp & Call to parent) have been activated on your device.'
+      );
     }
   };
 
   const handleStopSos = async () => {
     try {
-      await (stopSos as any)({}).unwrap();
-      setIsSosActive(false);
-      progressAnim.setValue(0);
       if (trackingIntervalRef.current) {
         clearInterval(trackingIntervalRef.current);
         trackingIntervalRef.current = null;
       }
-      Alert.alert("SOS Stopped", "Emergency mode deactivated.");
+      await (stopSos as any)({}).unwrap();
+      setIsSosActive(false);
+      setStatus('idle');
+      setTapWarning(null);
+      Alert.alert('SOS Deactivated', 'Emergency mode has been cancelled.');
     } catch (err) {
-      console.error("Failed to stop SOS", err);
-      Alert.alert("Error", "Could not stop SOS.");
+      console.error('Failed to stop SOS', err);
+      setIsSosActive(false);
+      setStatus('idle');
     }
   };
 
-  const circleSize = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [200, 240]
-  });
+  // Direct Channel Handlers
+  const handleCallEmergency = () => {
+    const parentOrEmergency = user?.emergencyContact || user?.emergency_contact;
+    const parentNumberStr = parentOrEmergency ? String(parentOrEmergency).replace(/\D/g, '') : '';
+    const numberToCall = parentNumberStr || '112';
+    Linking.openURL(`tel:${numberToCall}`);
+  };
+
+  const handleWhatsApp = () => {
+    const locUrl = location
+      ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+      : 'Location coordinates being acquired...';
+    const distressMessage = getDistressMessage(locUrl);
+
+    const parentOrEmergency = user?.emergencyContact || user?.emergency_contact;
+    const parentNumberStr = parentOrEmergency ? String(parentOrEmergency).replace(/\D/g, '') : '';
+
+    const waUrl = parentNumberStr
+      ? `https://wa.me/${parentNumberStr}?text=${encodeURIComponent(distressMessage)}`
+      : `https://wa.me/?text=${encodeURIComponent(distressMessage)}`;
+
+    Linking.openURL(waUrl);
+  };
+
+  const handleEmailAdmin = () => {
+    const orgEmail =
+      user?.organization?.email ||
+      user?.organizations?.email ||
+      'shyamsingare67@gmail.com';
+    const locUrl = location
+      ? `https://maps.google.com/?q=${location.lat},${location.lng}`
+      : 'Location coordinates unavailable';
+
+    const subject = `🚨 EMERGENCY SOS DISTRESS: ${user?.name || 'Member'}`;
+    const body = getDistressMessage(locUrl);
+
+    Linking.openURL(
+      `mailto:${orgEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    );
+  };
+
+  const orgLogo = user?.organization?.logo || user?.organizations?.logo;
 
   return (
-    <SafeAreaView className="flex-1 bg-white items-center justify-center p-6">
-      <Text className="text-3xl font-bold text-gray-900 mb-2">
-        तिची सुरक्षा (SOS)
-      </Text>
-      <Text className="text-gray-500 mb-12 text-center px-4">
-        Hold the button for 3 seconds to trigger an emergency SOS alert.
-      </Text>
+    <ScrollView
+      className="flex-1 bg-slate-50 dark:bg-slate-950 w-full"
+      contentContainerStyle={{ paddingBottom: 60 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* 1. Top 3 Header Cards Row */}
+      <View className="px-3.5 sm:px-4 pt-4">
+        <View className="flex-row gap-2.5 items-stretch">
+          {/* Card 1: Left - Full Covered Org Image */}
+          <View
+            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-md min-h-[145px] max-h-[160px] bg-slate-900 items-center justify-center"
+          >
+            {orgLogo ? (
+              <Image
+                source={{ uri: orgLogo }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View className="w-full h-full items-center justify-center bg-slate-900">
+                <Shield color="#38bdf8" size={32} />
+              </View>
+            )}
+          </View>
 
-      {/* SOS Button Area */}
-      <View className="items-center justify-center h-80">
-        <Animated.View
-          style={{
-            width: circleSize,
-            height: circleSize,
-            borderRadius: 150,
-            backgroundColor: isSosActive ? '#fee2e2' : '#f3f4f6',
-            position: 'absolute',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        />
-        
-        <Pressable
-          onPressIn={startHold}
-          onPressOut={cancelHold}
-          disabled={isSosActive || isTriggering || isStopping}
-          className={`w-48 h-48 rounded-full items-center justify-center shadow-lg ${
-            isSosActive ? 'bg-red-600' : 'bg-red-500'
-          }`}
-          style={({ pressed }) => ({
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-          })}
-        >
-          {isTriggering || isStopping ? (
-            <Loader2 color="#fff" size={48} className="animate-spin" />
-          ) : (
-            <>
-              <Shield color="#fff" size={64} />
-              <Text className="text-white font-bold text-2xl mt-2 tracking-widest">
-                {isSosActive ? "ACTIVE" : "SOS"}
+          {/* Card 2: Center Tichi Suraksha Card */}
+          <View
+            className="flex-[1.25] rounded-3xl p-3 items-center justify-center shadow-xl min-h-[145px] max-h-[160px] relative overflow-hidden"
+            style={{ backgroundColor: '#f97316' }}
+          >
+            <View className="bg-orange-100 rounded-full w-13 h-13 mb-1.5 items-center justify-center overflow-hidden border-2 border-white/95 shadow-sm">
+              <Image
+                source={require('@/assets/images/tich-surksha-woman.jpg')}
+                style={{ width: 52, height: 52 }}
+                resizeMode="cover"
+              />
+            </View>
+            <Text className="text-sm font-black text-slate-950 tracking-wider text-center">
+              “तिची सुरक्षा”
+            </Text>
+            <View className="bg-white/45 px-2 py-0.5 rounded-full mt-1 border border-white/60">
+              <Text className="text-[8px] font-black text-slate-950 text-center">
+                आपली जबाबदारी
               </Text>
-            </>
-          )}
-        </Pressable>
-      </View>
+            </View>
+          </View>
 
-      {/* Status Indicators */}
-      <View className="w-full mt-12 bg-slate-50 p-4 rounded-xl border border-slate-100">
-        <View className="flex-row items-center mb-3">
-          <MapPin color={location ? "#10b981" : "#ef4444"} size={20} />
-          <Text className="ml-2 text-slate-700">
-            {location ? "GPS Location Acquired" : locationErrorMsg || "Acquiring GPS..."}
-          </Text>
-        </View>
-        <View className="flex-row items-center mb-3">
-          <Phone color="#3b82f6" size={20} />
-          <Text className="ml-2 text-slate-700">
-            Emergency Contact: {user?.emergencyContact || "Not Set"}
-          </Text>
+          {/* Card 3: Right - Full Covered 112 Police Shield */}
+          <View
+            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] max-h-[160px] p-2 items-center justify-center"
+            style={{ backgroundColor: '#ffffff' }}
+          >
+            <Image
+              source={require('@/assets/images/police-shield.jpg')}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          </View>
         </View>
       </View>
 
-      {isSosActive && (
-        <Pressable 
-          onPress={handleStopSos}
-          disabled={isStopping}
-          className="mt-8 bg-slate-900 py-4 px-8 rounded-full flex-row items-center"
-        >
-          {isStopping ? (
-            <Loader2 color="#fff" size={20} className="animate-spin mr-2" />
-          ) : null}
-          <Text className="text-white font-bold text-lg">Stop Emergency Mode</Text>
-        </Pressable>
-      )}
-    </SafeAreaView>
+      {/* 2. Main Emergency SOS Dispatch Card */}
+      <View className="px-3.5 sm:px-4 mt-4">
+        <View className="bg-white dark:bg-slate-900 border border-rose-500/30 rounded-[2rem] p-4 sm:p-6 shadow-sm dark:shadow-2xl relative overflow-hidden">
+          {/* Header */}
+          <View className="flex-row items-center gap-2 mb-6">
+            <Shield size={18} color="#f43f5e" />
+            <Text className="text-xs font-black tracking-widest uppercase text-rose-500 dark:text-rose-400">
+              EMERGENCY SOS DISPATCH
+            </Text>
+          </View>
+
+          {/* Center SOS Button */}
+          <View className="items-center justify-center mb-5">
+            <View className="relative items-center justify-center">
+              {/* Outer Glowing Pulse Ring */}
+              <Animated.View
+                style={{
+                  transform: [{ scale: pulseAnim }],
+                  position: 'absolute',
+                  width: 210,
+                  height: 210,
+                  borderRadius: 105,
+                  backgroundColor: isSosActive
+                    ? 'rgba(244, 63, 94, 0.15)'
+                    : 'rgba(16, 185, 129, 0.15)',
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  width: 180,
+                  height: 180,
+                  borderRadius: 90,
+                  backgroundColor: isSosActive
+                    ? 'rgba(244, 63, 94, 0.25)'
+                    : 'rgba(16, 185, 129, 0.25)',
+                }}
+              />
+
+              {/* Main SOS Touch Button (Requires 3-second hold to trigger) */}
+              <Pressable
+                onPressIn={!isSosActive ? startHold : undefined}
+                onPressOut={!isSosActive ? cancelHold : undefined}
+                onPress={() => {
+                  if (isSosActive) {
+                    handleStopSos();
+                  } else {
+                    // Tap does not trigger - show prompt to hold for 3 seconds
+                    setTapWarning('Hold for 3 full seconds to activate SOS.');
+                  }
+                }}
+                disabled={isTriggering || isStopping}
+                className={`w-40 h-40 rounded-full items-center justify-center shadow-2xl relative overflow-hidden ${
+                  isSosActive
+                    ? 'bg-slate-950 border-4 border-rose-600'
+                    : isHolding
+                    ? 'bg-emerald-600'
+                    : 'bg-emerald-500'
+                }`}
+                style={({ pressed }) => ({
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                })}
+              >
+                {/* Hold Progress Bar Fill */}
+                {!isSosActive && isHolding && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${holdProgress}%`,
+                      backgroundColor: '#065f46',
+                    }}
+                  />
+                )}
+
+                <View className="items-center justify-center relative z-10 px-2">
+                  {isTriggering || isStopping ? (
+                    <Loader2 size={36} color="#ffffff" className="animate-spin" />
+                  ) : isSosActive ? (
+                    <>
+                      <CheckCircle2 size={32} color="#f43f5e" />
+                      <Text className="text-white font-black text-lg tracking-widest mt-1">
+                        STOP SOS
+                      </Text>
+                      <Text className="text-rose-400 text-[9px] font-black uppercase tracking-wider mt-0.5">
+                        CANCEL ALERT
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle size={30} color="#ffffff" />
+                      <Text className="text-white font-black text-lg tracking-widest mt-1 text-center">
+                        {isHolding ? 'HOLDING...' : 'HOLD SOS'}
+                      </Text>
+                      <Text className="text-emerald-100 text-[9px] font-black tracking-wider uppercase mt-0.5 text-center">
+                        {isHolding
+                          ? `${Math.round(holdProgress)}% (${((holdProgress / 100) * 3).toFixed(1)}s)`
+                          : 'HOLD 3 SECONDS'}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              </Pressable>
+            </View>
+
+            {/* Instruction / Status Subtext */}
+            <Text className="text-slate-500 dark:text-slate-400 text-xs text-center max-w-xs leading-relaxed mt-5">
+              {isSosActive
+                ? `SOS mode is ACTIVE. Periodic GPS emails are being sent to dispatch every 5 min. Tap Stop SOS to cancel.`
+                : 'Press and hold for 3 continuous seconds. SOS will automatically send email alerts, initiate a phone call, and open WhatsApp with your live GPS location.'}
+            </Text>
+
+            {tapWarning && !isSosActive && (
+              <View className="mt-2.5 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1.5 rounded-xl">
+                <Text className="text-amber-600 dark:text-amber-400 text-xs font-bold text-center">
+                  ⚠️ {tapWarning}
+                </Text>
+              </View>
+            )}
+
+            {status === 'success' && (
+              <View className="mt-2 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
+                <Text className="text-emerald-600 dark:text-emerald-400 text-xs font-bold text-center">
+                  ✓ SOS alert dispatched via Email, WhatsApp & Phone!
+                </Text>
+              </View>
+            )}
+
+            {status === 'error' && (
+              <Text className="text-rose-500 font-bold mt-2 text-xs text-center">
+                Alert dispatched via direct device channels.
+              </Text>
+            )}
+          </View>
+
+          {/* Direct Emergency Channels Section */}
+          <View className="mt-2">
+            <View className="flex-row items-center gap-2 mb-3.5">
+              <View className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+              <Text className="text-slate-400 dark:text-slate-500 text-[10px] font-extrabold uppercase tracking-widest text-center">
+                DIRECT EMERGENCY CHANNELS
+              </Text>
+              <View className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+            </View>
+
+            <View className="flex-row gap-2">
+              {/* Call Parent / Emergency Contact */}
+              <TouchableOpacity
+                onPress={handleCallEmergency}
+                activeOpacity={0.8}
+                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-rose-500/40 bg-rose-500/10 active:bg-rose-500/20"
+              >
+                <Phone size={20} color="#f43f5e" />
+                <Text className="text-rose-600 dark:text-rose-400 font-black text-xs mt-1.5 text-center">
+                  CALL
+                </Text>
+                <Text className="text-rose-500/80 text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
+                  {user?.emergencyContact || user?.emergency_contact || '112 POLICE'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* WhatsApp */}
+              <TouchableOpacity
+                onPress={handleWhatsApp}
+                activeOpacity={0.8}
+                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 active:bg-emerald-500/20"
+              >
+                <MessageCircle size={20} color="#10b981" />
+                <Text className="text-emerald-600 dark:text-emerald-400 font-black text-xs mt-1.5 text-center">
+                  WHATSAPP
+                </Text>
+                <Text className="text-emerald-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                  SEND LOCATION
+                </Text>
+              </TouchableOpacity>
+
+              {/* Email Admin */}
+              <TouchableOpacity
+                onPress={handleEmailAdmin}
+                activeOpacity={0.8}
+                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-blue-500/40 bg-blue-500/10 active:bg-blue-500/20"
+              >
+                <Mail size={20} color="#3b82f6" />
+                <Text className="text-blue-600 dark:text-blue-400 font-black text-xs mt-1.5 text-center">
+                  EMAIL
+                </Text>
+                <Text className="text-blue-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                  ALERT ADMIN
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* 3. Real-Time GPS Location Card */}
+      <View className="px-3.5 sm:px-4 mt-4">
+        <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm dark:shadow-xl">
+          {/* Header */}
+          <View className="flex-row items-center justify-between gap-2 mb-3.5">
+            <View className="flex-row items-center gap-2 flex-1 shrink mr-2">
+              <MapPin size={18} color="#f43f5e" />
+              <Text className="text-slate-900 dark:text-white font-black text-sm shrink" numberOfLines={1}>
+                Live GPS Location
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={fetchLocation}
+              className="flex-row items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 active:bg-slate-200 dark:active:bg-slate-700"
+            >
+              <RefreshCw
+                size={12}
+                color="#f43f5e"
+                className={locLoading ? 'animate-spin' : ''}
+              />
+              <Text className="text-rose-500 dark:text-rose-400 text-xs font-bold">Refresh</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Location status badge */}
+          <View
+            className={`border rounded-2xl p-3 flex-row items-center justify-between gap-2 mb-3.5 ${
+              location
+                ? 'bg-emerald-500/10 border-emerald-500/20'
+                : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <View className="flex-row items-center gap-2 flex-1 shrink mr-2">
+              <CheckCircle2
+                size={16}
+                color={location ? '#10b981' : '#94a3b8'}
+              />
+              <Text
+                className={`text-xs font-bold shrink ${
+                  location ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                }`}
+                numberOfLines={1}
+              >
+                {location ? 'Live Location Locked' : locationErrorMsg || 'Locating GPS...'}
+              </Text>
+            </View>
+            {location && (
+              <View className="bg-emerald-500/20 px-2 py-0.5 rounded-md shrink-0">
+                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                  ±{Math.round(location.accuracy)}m Accuracy
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Latitude / Longitude */}
+          <View className="flex-row gap-2.5 mb-3.5">
+            <View className="flex-1 bg-slate-100 dark:bg-slate-950 rounded-2xl p-3 border border-slate-200 dark:border-slate-800">
+              <Text className="text-slate-400 dark:text-slate-500 text-[9px] uppercase font-bold tracking-wider mb-0.5">
+                LATITUDE
+              </Text>
+              <Text className="text-slate-900 dark:text-white font-mono font-bold text-sm" numberOfLines={1}>
+                {location ? location.lat.toFixed(6) : '---'}
+              </Text>
+            </View>
+
+            <View className="flex-1 bg-slate-100 dark:bg-slate-950 rounded-2xl p-3 border border-slate-200 dark:border-slate-800">
+              <Text className="text-slate-400 dark:text-slate-500 text-[9px] uppercase font-bold tracking-wider mb-0.5">
+                LONGITUDE
+              </Text>
+              <Text className="text-slate-900 dark:text-white font-mono font-bold text-sm" numberOfLines={1}>
+                {location ? location.lng.toFixed(6) : '---'}
+              </Text>
+            </View>
+          </View>
+
+          {/* View on Google Maps Button */}
+          <TouchableOpacity
+            onPress={() => {
+              if (location) {
+                Linking.openURL(
+                  `https://maps.google.com/?q=${location.lat},${location.lng}`
+                );
+              }
+            }}
+            disabled={!location}
+            activeOpacity={0.8}
+            className={`w-full flex-row items-center justify-center gap-2 py-3 rounded-2xl border ${
+              location
+                ? 'bg-slate-900 dark:bg-slate-800 border-slate-800 dark:border-slate-700 active:opacity-90'
+                : 'bg-slate-200 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800 opacity-50'
+            }`}
+          >
+            <ExternalLink size={15} color="#ffffff" />
+            <Text className="text-white font-bold text-xs">
+              View Live Map on Google Maps
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 4. Auto-Filled Profile Information Card */}
+      <View className="px-3.5 sm:px-4 mt-4">
+        <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm dark:shadow-xl">
+          <View className="flex-row items-center justify-between gap-2 mb-3.5">
+            <View className="flex-row items-center gap-2 flex-1 shrink mr-2">
+              <User size={18} color="#f43f5e" />
+              <Text className="text-slate-900 dark:text-white font-black text-sm shrink" numberOfLines={1}>
+                Auto-Filled Profile
+              </Text>
+            </View>
+            <View className="bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 shrink-0">
+              <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                VERIFIED
+              </Text>
+            </View>
+          </View>
+
+          {/* User Row */}
+          <View className="flex-row items-center gap-3 mb-3.5 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+            <View className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center overflow-hidden shrink-0">
+              {user?.profilePhoto || user?.profile_photo ? (
+                <Image
+                  source={{ uri: user.profilePhoto || user.profile_photo }}
+                  style={{ width: 48, height: 48 }}
+                />
+              ) : (
+                <User size={24} color={isDark ? '#94a3b8' : '#64748b'} />
+              )}
+            </View>
+            <View className="flex-1 min-w-0">
+              <Text className="text-slate-900 dark:text-white font-black text-sm" numberOfLines={1}>
+                {user?.name || 'User'}
+              </Text>
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium" numberOfLines={1}>
+                {user?.email}
+              </Text>
+              {(user?.organization?.name || user?.organizations?.name) && (
+                <View className="flex-row items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 self-start mt-1">
+                  <Building2 size={10} color={isDark ? '#94a3b8' : '#64748b'} />
+                  <Text className="text-slate-700 dark:text-slate-300 text-[10px] font-bold" numberOfLines={1}>
+                    {user?.organization?.name || user?.organizations?.name}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Details List */}
+          <View className="space-y-2">
+            <View className="flex-row justify-between items-center py-1">
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold shrink-0 mr-2">
+                Contact Number:
+              </Text>
+              <Text className="text-slate-900 dark:text-white font-mono font-bold text-xs shrink text-right" numberOfLines={1}>
+                {user?.phone || 'N/A'}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center py-1 border-t border-slate-100 dark:border-slate-800/60">
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold shrink-0 mr-2">
+                Emergency Contact:
+              </Text>
+              <Text className="text-rose-600 dark:text-rose-400 font-mono font-bold text-xs shrink text-right" numberOfLines={1}>
+                {user?.emergencyContact || user?.emergency_contact || 'N/A'}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center py-1 border-t border-slate-100 dark:border-slate-800/60">
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold shrink-0 mr-2">
+                System Role:
+              </Text>
+              <Text className="text-slate-900 dark:text-white font-bold text-xs uppercase tracking-wider shrink text-right" numberOfLines={1}>
+                {user?.role || 'MEMBER'}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* 5. How this feature works Card (Marathi Info) */}
+      <View className="px-3.5 sm:px-4 mt-4">
+        <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm dark:shadow-xl flex-row items-start gap-3">
+          <Info size={20} color="#3b82f6" className="mt-0.5 shrink-0" />
+          <View className="flex-1">
+            <Text className="text-slate-900 dark:text-white font-black text-sm mb-2.5">
+              सिस्टम कसे कार्य करते?{' '}
+              <Text className="text-slate-500 dark:text-slate-400 font-normal text-xs">
+                (How this feature works)
+              </Text>
+            </Text>
+
+            <View className="space-y-2">
+              <Text className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                • <Text className="text-rose-500 dark:text-rose-400 font-bold">३ सेकंद होल्ड:</Text>{' '}
+                चुकीने बटण दाबले जाऊ नये म्हणून ३ सेकंद सतत दाबून धरल्यावरच SOS सक्रिय होतो.
+              </Text>
+              <Text className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                • <Text className="text-rose-500 dark:text-rose-400 font-bold">तात्काळ ईमेल व GPS:</Text>{' '}
+                SOS सक्रिय होताच Admin, Support व पोलीस यंत्रणेला तुमचा Live GPS Location ईमेल जातो आणि दर ५ मिनिटांनी नवीन लोकेशन अपडेट पाठवले जाते.
+              </Text>
+              <Text className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                • <Text className="text-rose-500 dark:text-rose-400 font-bold">पालक / आपत्कालीन फोन कॉल:</Text>{' '}
+                तुमच्या Emergency Contact / पालकांना थेट फोन कॉल सुरू होतो.
+              </Text>
+              <Text className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+                • <Text className="text-rose-500 dark:text-rose-400 font-bold">WhatsApp लोकेशन मेसेज:</Text>{' '}
+                थेट WhatsApp वर Live Google Maps लिंकसह आपत्कालीन संदेश पाठवला जातो.
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* 6. Footer */}
+      <View className="px-3.5 sm:px-4 mt-4">
+        <AppFooter />
+      </View>
+    </ScrollView>
   );
 }

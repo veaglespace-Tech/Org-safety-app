@@ -12,6 +12,7 @@ import { useUserSignInMutation } from '../../services/api/authApi';
 import { setSession } from '../../store/slices/authSlice';
 import { resolveDashboardPath } from '../../utils/roles';
 import { normalizeEmailInput } from '../../utils/formValidation';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
@@ -86,22 +87,31 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white px-6 pt-16 pb-8">
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      className="bg-slate-50 dark:bg-slate-950 px-6 pt-16 pb-8"
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Top Header Controls */}
+      <View className="flex-row justify-end mb-4">
+        <ThemeToggle />
+      </View>
+
       <View className="mb-8 items-center">
-        <Text className="text-blue-600 font-bold mb-3 uppercase tracking-wider text-xs bg-blue-50 px-3 py-1 rounded-full">
+        <Text className="text-blue-600 dark:text-blue-400 font-bold mb-3 uppercase tracking-wider text-xs bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 px-3 py-1 rounded-full">
           Team Login
         </Text>
-        <Text className="text-3xl font-extrabold text-slate-900 mb-2 text-center">
+        <Text className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 text-center">
           Welcome to ढोल - ताशा महासंघ
         </Text>
-        <Text className="text-slate-500 text-center font-medium">
+        <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm">
           Sign in to access your dashboard, emergency SOS, and safety tools.
         </Text>
       </View>
 
       {errorMessage ? (
-        <View className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-          <Text className="text-red-700 font-semibold text-center text-sm">
+        <View className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl p-4">
+          <Text className="text-red-700 dark:text-red-400 font-semibold text-center text-sm">
             {errorMessage}
           </Text>
         </View>
@@ -149,10 +159,10 @@ export default function LoginScreen() {
 
         <View className="flex-row items-center justify-between mb-4 mt-2">
           <TouchableOpacity onPress={() => setValue('rememberMe', true)}>
-            <Text className="text-slate-700 text-sm font-medium">Remember me</Text>
+            <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium">Remember me</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/forgot-password' as any)}>
-            <Text className="text-blue-600 font-bold text-sm">Forgot Password?</Text>
+            <Text className="text-blue-600 dark:text-blue-400 font-bold text-sm">Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
@@ -165,9 +175,9 @@ export default function LoginScreen() {
         />
 
         <View className="mt-8 items-center flex-row justify-center">
-          <Text className="text-slate-500 font-medium">New here? </Text>
+          <Text className="text-slate-500 dark:text-slate-400 font-medium">New here? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/register' as any)}>
-            <Text className="text-blue-600 font-bold underline">Create your organization</Text>
+            <Text className="text-blue-600 dark:text-blue-400 font-bold underline">Create your organization</Text>
           </TouchableOpacity>
         </View>
       </View>
