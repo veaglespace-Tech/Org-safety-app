@@ -1,43 +1,93 @@
-import React from 'react';
-import { TextInput as RNTextInput, TextInputProps, View, Text } from 'react-native';
-import { clsx } from 'clsx';
+import React, { useState } from 'react';
+import {
+  TextInput as RNTextInput,
+  TextInputProps,
+  View,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
 import { twMerge } from 'tailwind-merge';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  helpText?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  isPassword?: boolean;
+  required?: boolean;
   containerClassName?: string;
 }
 
-export function TextInput({ 
-  label, 
-  error, 
-  className, 
+export function TextInput({
+  label,
+  error,
+  helpText,
+  leftIcon,
+  rightIcon,
+  isPassword,
+  required,
+  className,
   containerClassName,
-  ...props 
+  secureTextEntry,
+  ...props
 }: InputProps) {
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const isSecure = isPassword ? !showPassword : secureTextEntry;
+
   return (
     <View className={twMerge('w-full mb-4', containerClassName)}>
       {label && (
-        <Text className="text-gray-700 font-medium mb-1.5 ml-1">
-          {label}
+        <Text className="text-sm font-bold text-slate-700 mb-1.5 ml-1">
+          {label} {required && <Text className="text-red-500">*</Text>}
         </Text>
       )}
-      <RNTextInput
+
+      <View
         className={twMerge(
-          'w-full h-12 px-4 bg-gray-50 border rounded-lg text-gray-900',
-          error ? 'border-red-500' : 'border-gray-300 focus:border-blue-500',
-          className
+          'flex-row items-center bg-white border-2 rounded-2xl overflow-hidden transition-all',
+          error
+            ? 'border-red-400 bg-red-50/20'
+            : 'border-slate-200 focus:border-blue-600'
         )}
-        placeholderTextColor="#9ca3af"
-        {...props}
-      />
-      {error && (
-        <Text className="text-red-500 text-sm mt-1.5 ml-1">
-          {error}
-        </Text>
-      )}
+      >
+        {leftIcon && <View className="pl-3.5 pr-2 py-3">{leftIcon}</View>}
+
+        <RNTextInput
+          className={twMerge(
+            'flex-1 px-4 py-3 text-slate-900 font-medium text-sm',
+            leftIcon ? 'pl-1' : '',
+            rightIcon || isPassword ? 'pr-2' : '',
+            className
+          )}
+          placeholderTextColor="#94a3b8"
+          secureTextEntry={isSecure}
+          {...props}
+        />
+
+        {isPassword ? (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            className="pr-3.5 pl-2 py-3"
+          >
+            {showPassword ? (
+              <EyeOff size={18} color="#64748b" />
+            ) : (
+              <Eye size={18} color="#64748b" />
+            )}
+          </TouchableOpacity>
+        ) : rightIcon ? (
+          <View className="pr-3.5 pl-2 py-3">{rightIcon}</View>
+        ) : null}
+      </View>
+
+      {error ? (
+        <Text className="text-red-500 text-xs font-medium mt-1 ml-1">{error}</Text>
+      ) : helpText ? (
+        <Text className="text-slate-400 text-xs font-medium mt-1 ml-1">{helpText}</Text>
+      ) : null}
     </View>
   );
 }
+

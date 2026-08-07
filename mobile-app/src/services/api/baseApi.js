@@ -1,46 +1,35 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "@/store/slices/authSlice";
 import { normalizeRole, ROLES, hasPermission, PERMISSIONS } from "@/utils/roles";
-import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
-
-const DEFAULT_LOCAL_API_URL = "http://localhost:5001/api";
-const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
-
-const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
-
-const isLocalHost = (hostname) => {
-  if (!hostname) return false;
-
-  const normalizedHost = String(hostname).toLowerCase().trim();
-
-  return (
-    normalizedHost === "localhost" ||
-    normalizedHost === "0.0.0.0" ||
-    normalizedHost.startsWith("127.") ||
-    normalizedHost.startsWith("10.") ||
-    normalizedHost.startsWith("192.168.") ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalizedHost)
-  );
-};
+import { API_BASE_URL as CONFIG_API_BASE_URL, LIVE_API_URL } from "@/config";
 
 export const API_BASE_URL = CONFIG_API_BASE_URL;
 
-const LIVE_API_URL = process.env.EXPO_PUBLIC_LIVE_API_URL || "https://tichisuraksha.veaglespace.com/api";
-let useLiveApi = false;
+const prepareAuthHeaders = (headers, { getState }) => {
+  headers.set("cache-control", "no-cache, no-store, max-age=0");
+  headers.set("pragma", "no-cache");
 
-const getBaseQuery = (isLive) => fetchBaseQuery({
-  baseUrl: isLive ? LIVE_API_URL : API_BASE_URL,
+  const token = getState()?.auth?.token;
+  if (token && token !== "__cookie_session__") {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+
+  return headers;
+};
+
+const localBaseQuery = fetchBaseQuery({
+  baseUrl: API_BASE_URL,
   credentials: "include",
   cache: "no-store",
-  prepareHeaders: (headers) => {
-    headers.set("cache-control", "no-cache, no-store, max-age=0");
-    headers.set("pragma", "no-cache");
-    return headers;
-  },
+  prepareHeaders: prepareAuthHeaders,
 });
 
-const localBaseQuery = getBaseQuery(false);
-const liveBaseQuery = getBaseQuery(true);
+const liveBaseQuery = fetchBaseQuery({
+  baseUrl: LIVE_API_URL,
+  credentials: "include",
+  cache: "no-store",
+  prepareHeaders: prepareAuthHeaders,
+});
 
 const PROTECTED_APP_ROOTS = ["/dashboard", "/org", "/member", "/team-leader", "/super-admin"];
 
@@ -50,7 +39,7 @@ const resolveRequestUrl = (args) => {
 };
 
 const isAuthMutationRequest = (url) =>
-  ["/auth/login", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate"]
+  ["/auth/login", "/auth/forgot-password", "/auth/reset-password", "/auth/reset-password/validate", "/auth/register"]
     .some((path) => String(url).includes(path));
 
 const shouldForceLogoutForForbidden = (error) => {
@@ -105,7 +94,7 @@ const handleUnauthorizedSession = (api, args) => {
   }
 
   const isSuperAdminRoute = currentPath.startsWith("/super-admin");
-  const loginPath = isSuperAdminRoute ? "/super-admin/login" : "/login";
+  const loginPath = isSuperAdminRoute ? "/super-admin/login" : "/(auth)/login";
 
   if (currentPath !== loginPath) {
     window.location.replace(loginPath);
@@ -113,18 +102,20 @@ const handleUnauthorizedSession = (api, args) => {
 };
 
 export const buildBaseQuery = () => async (args, api, extraOptions) => {
-  let result;
+  // First attempt: try configured local/primary API
+  let result = await localBaseQuery(args, api, extraOptions);
 
-  if (useLiveApi) {
-    result = await liveBaseQuery(args, api, extraOptions);
-  } else {
-    result = await localBaseQuery(args, api, extraOptions);
-    
-    // If local fetch fails, switch to live API and retry
-    if (result?.error?.status === "FETCH_ERROR") {
-      console.warn("Local API failed, switching to live API:", LIVE_API_URL);
-      useLiveApi = true;
-      result = await liveBaseQuery(args, api, extraOptions);
+  // Fallback: If local API fails with a network/connection error and live API is available, retry on Live Server
+  if (
+    result?.error &&
+    result.error.status === "FETCH_ERROR" &&
+    LIVE_API_URL &&
+    LIVE_API_URL !== API_BASE_URL
+  ) {
+    console.warn(`[API] Local connection failed. Falling back to live server: ${LIVE_API_URL}`);
+    const fallbackResult = await liveBaseQuery(args, api, extraOptions);
+    if (!fallbackResult?.error || fallbackResult.error.status !== "FETCH_ERROR") {
+      result = fallbackResult;
     }
   }
 
@@ -142,7 +133,7 @@ export const buildBaseQuery = () => async (args, api, extraOptions) => {
     // Sanitize non-JSON or cryptic errors into user-friendly messages
     let customMessage = "";
     if (result.error.status === "FETCH_ERROR") {
-      customMessage = "Network error. Please check your internet connection.";
+      customMessage = "Unable to connect to server. Please check your network connection.";
     } else if (result.error.status === "PARSING_ERROR" || String(result.error.error).includes("SyntaxError")) {
       if (statusCode === 413) {
         customMessage = "The uploaded file or request is too large.";
@@ -167,7 +158,6 @@ export const buildBaseQuery = () => async (args, api, extraOptions) => {
         },
       };
     } else if (result.error.data?.message) {
-      // Ensure error.message exists if error.data.message exists
       result.error.message = result.error.data.message;
     }
   }

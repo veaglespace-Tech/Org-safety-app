@@ -40,7 +40,7 @@ import {
 
 export default function UsersDirectoryScreen() {
   const router = useRouter();
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -63,7 +63,7 @@ export default function UsersDirectoryScreen() {
     refetch,
   } = useGetOrgUsersQuery(100, { skip: !authUser });
 
-  const { data: rolesData } = useGetRolesQuery();
+  const { data: rolesData } = useGetRolesQuery(undefined);
   const [createUser] = useCreateOrgUserMutation();
 
   const users = useMemo(() => {

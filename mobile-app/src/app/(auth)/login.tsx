@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { useForm, Controller } from 'react-hook-form';
@@ -15,7 +15,7 @@ import { normalizeEmailInput } from '../../utils/formValidation';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(128, 'Password is too long'),
+  password: z.string().min(1, 'Password is required').max(128, 'Password is too long'),
   rememberMe: z.boolean().optional(),
 });
 
@@ -26,6 +26,7 @@ export default function LoginScreen() {
   const dispatch = useDispatch();
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const [userSignIn, { isLoading }] = useUserSignInMutation();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { control, handleSubmit, setValue } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -36,23 +37,28 @@ export default function LoginScreen() {
     },
   });
 
-  useEffect(() => {
-    // In React Native, we typically use AsyncStorage instead of localStorage.
-    // For now, we'll skip the 'rememberMe' auto-fill until AsyncStorage is fully ported.
-  }, []);
+  const getDashboardRoute = (role?: string | null, customPath?: string | null) => {
+    const normalized = (role || '').toLowerCase();
+    if (normalized === 'admin' || normalized === 'org_admin') {
+      return '/(drawer)/admin/dashboard';
+    }
+    if (normalized === 'member') {
+      return '/(drawer)/member/dashboard';
+    }
+    const resolved = resolveDashboardPath(role, customPath) || '/(drawer)/member/dashboard';
+    if (resolved.startsWith('/member/dashboard')) return '/(drawer)/member/dashboard';
+    if (resolved.startsWith('/admin/dashboard') || resolved.startsWith('/org/dashboard')) return '/(drawer)/admin/dashboard';
+    return '/(drawer)/member/dashboard';
+  };
 
   useEffect(() => {
-    if (!hydrated || !token) return;
-    const nextPath = resolveDashboardPath(user?.currentRole, user?.dashboardPath || redirectPath) || '/(drawer)/member/dashboard';
-    
-    // Convert web path to Expo Router path if necessary
-    let expoPath = nextPath;
-    if (expoPath.startsWith('/member/dashboard')) expoPath = '/(drawer)/member/dashboard';
-    
-    router.replace(expoPath as any);
+    if (!hydrated || !token || !user) return;
+    const target = getDashboardRoute(user?.role || user?.currentRole, user?.dashboardPath || redirectPath);
+    router.replace(target as any);
   }, [hydrated, token, user, redirectPath, router]);
 
   const onSubmit = async (values: LoginFormData) => {
+    setErrorMessage(null);
     try {
       const payload = {
         ...values,
@@ -62,34 +68,44 @@ export default function LoginScreen() {
       const result = await userSignIn(payload).unwrap();
       dispatch(setSession(result));
 
-      const nextPath = resolveDashboardPath(
-        result.user?.role || result.user?.currentRole,
-        result.redirectPath || result.user?.dashboardPath
-      ) || '/(drawer)/member/dashboard';
-      
-      let expoPath = nextPath;
-      if (expoPath.startsWith('/member/dashboard')) expoPath = '/(drawer)/member/dashboard';
-
-      router.replace(expoPath as any);
+      const role = result?.user?.role || result?.user?.currentRole;
+      const targetRoute = getDashboardRoute(role, result?.redirectPath || result?.user?.dashboardPath);
+      router.replace(targetRoute as any);
     } catch (err: any) {
-      const errorMsg = err?.data?.message || 'Invalid credentials or unable to sign in.';
-      Alert.alert('Login Failed', errorMsg);
+      const errorMsg =
+        err?.data?.error ||
+        err?.data?.message ||
+        err?.error ||
+        err?.message ||
+        'Invalid credentials or unable to connect to server.';
+      setErrorMessage(errorMsg);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Login Failed', errorMsg);
+      }
     }
   };
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white px-6 pt-16 pb-8">
-      <View className="mb-10 items-center">
-        <Text className="text-blue-600 font-bold mb-4 uppercase tracking-wider text-xs bg-blue-50 px-3 py-1 rounded-full">
+      <View className="mb-8 items-center">
+        <Text className="text-blue-600 font-bold mb-3 uppercase tracking-wider text-xs bg-blue-50 px-3 py-1 rounded-full">
           Team Login
         </Text>
         <Text className="text-3xl font-extrabold text-slate-900 mb-2 text-center">
           Welcome to ढोल - ताशा महासंघ
         </Text>
         <Text className="text-slate-500 text-center font-medium">
-          Sign in to manage attendance, check-ins, and your daily work in one place.
+          Sign in to access your dashboard, emergency SOS, and safety tools.
         </Text>
       </View>
+
+      {errorMessage ? (
+        <View className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <Text className="text-red-700 font-semibold text-center text-sm">
+            {errorMessage}
+          </Text>
+        </View>
+      ) : null}
 
       <View className="space-y-4">
         <Controller
@@ -102,7 +118,10 @@ export default function LoginScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               onBlur={onBlur}
-              onChangeText={onChange}
+              onChangeText={(text) => {
+                setErrorMessage(null);
+                onChange(text);
+              }}
               value={value}
               error={error?.message}
             />
@@ -118,7 +137,10 @@ export default function LoginScreen() {
               placeholder="Enter your password"
               secureTextEntry
               onBlur={onBlur}
-              onChangeText={onChange}
+              onChangeText={(text) => {
+                setErrorMessage(null);
+                onChange(text);
+              }}
               value={value}
               error={error?.message}
             />
@@ -138,12 +160,13 @@ export default function LoginScreen() {
           title={isLoading ? 'Signing In...' : 'Sign In'}
           onPress={handleSubmit(onSubmit)}
           disabled={isLoading}
+          isLoading={isLoading}
           className="mt-4 py-4 rounded-full bg-blue-600 shadow-sm"
         />
 
         <View className="mt-8 items-center flex-row justify-center">
           <Text className="text-slate-500 font-medium">New here? </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/register' as any)}>
             <Text className="text-blue-600 font-bold underline">Create your organization</Text>
           </TouchableOpacity>
         </View>

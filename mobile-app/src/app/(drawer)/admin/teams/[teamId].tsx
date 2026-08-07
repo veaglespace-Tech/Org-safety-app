@@ -32,7 +32,7 @@ import {
 export default function TeamDetailScreen() {
   const { teamId } = useLocalSearchParams();
   const router = useRouter();
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const { data: teamsData, refetch } = useGetOrgTeamsQuery(100, { skip: !authUser });
   const { data: usersData } = useGetOrgUsersQuery(200, { skip: !authUser });

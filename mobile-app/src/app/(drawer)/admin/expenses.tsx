@@ -25,7 +25,7 @@ import {
 } from 'lucide-react-native';
 
 export default function AdminExpensesScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const [activeTab, setActiveTab] = useState('TRANSACTIONS'); // 'TRANSACTIONS' | 'CLAIMS'
   const [recordModalOpen, setRecordModalOpen] = useState(false);

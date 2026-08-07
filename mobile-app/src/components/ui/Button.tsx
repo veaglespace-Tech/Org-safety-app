@@ -7,18 +7,20 @@ interface ButtonProps extends TouchableOpacityProps {
   variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'outline' | 'error';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
+  title?: string;
   textClassName?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function Button({ 
   variant = 'primary', 
   size = 'md', 
   isLoading, 
+  title,
   className, 
   textClassName,
   children, 
-  disabled,
+  disabled, 
   ...props 
 }: ButtonProps) {
   
@@ -70,7 +72,11 @@ export function Button({
         <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? '#374151' : '#ffffff'} className="mr-2" />
       ) : null}
       
-      {typeof children === 'string' ? (
+      {title ? (
+        <Text className={twMerge(textVariantClasses[variant], textSizeClasses[size], textClassName)}>
+          {title}
+        </Text>
+      ) : typeof children === 'string' ? (
         <Text className={twMerge(textVariantClasses[variant], textSizeClasses[size], textClassName)}>
           {children}
         </Text>

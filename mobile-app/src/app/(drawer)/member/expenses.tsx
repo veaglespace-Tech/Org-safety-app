@@ -22,7 +22,7 @@ import {
 } from 'lucide-react-native';
 
 export default function MemberExpensesScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [amount, setAmount] = useState('');

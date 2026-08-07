@@ -1,49 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Image, Alert, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Phone, Mail, Lock, Save, Loader2, CheckCircle2, MapPin, Building2, Camera, Shield } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import {
+  User,
+  Phone,
+  Mail,
+  Lock,
+  Save,
+  MapPin,
+  Building2,
+  Camera,
+  HeartPulse,
+} from 'lucide-react-native';
+
 import { authApi } from '@/services/api/authApi';
 import { orgApi } from '@/services/api/orgApi';
 import { setCurrentUser } from '@/store/slices/authSlice';
-import * as ImagePicker from 'expo-image-picker';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { TextInput } from '@/components/ui/TextInput';
+import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
+import { Button } from '@/components/ui/Button';
+import { ROLES } from '@/utils/roles';
+
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const GENDERS = [
+  { label: 'Male', value: 'MALE' },
+  { label: 'Female', value: 'FEMALE' },
+  { label: 'Other', value: 'OTHER' },
+];
 
 export default function ProfileSettingsPage() {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user);
-  const [updateMe, { isLoading }] = authApi.useUpdateMeMutation();
-  const [updateOrgDetails, { isLoading: isOrgLoading }] = orgApi.useUpdateOrgDetailsMutation();
+  const { user } = useSelector((state: any) => state.auth);
 
-  const [activeTab, setActiveTab] = useState('profile');
-  const [status, setStatus] = useState('idle');
-
-  const [formData, setFormData] = useState({
-    name: '', email: '', phone: '', emergencyContact: '', password: '',
-    profilePhoto: '', city: '', gender: '', bloodGroup: '',
-    currentAddress: '', permanentAddress: '',
+  const { data: meData, refetch } = authApi.useGetMeQuery(undefined, {
+    refetchOnMountOrArgChange: true,
   });
+  
+  const [updateMe, { isLoading: isUpdatingProfile }] = authApi.useUpdateMeMutation();
+  const [updateOrgDetails, { isLoading: isUpdatingOrg }] = orgApi.useUpdateOrgDetailsMutation();
 
-  const [orgData, setOrgData] = useState({
-    name: '', email: '', phone: '', address: '',
-    city: '', state: '', country: '', logo: '',
-  });
-
-  const { data: meData } = authApi.useGetMeQuery(undefined, { refetchOnMountOrArgChange: true });
   const currentUser = meData?.user || user;
   const currentOrg = currentUser?.organization;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin =
+    currentUser?.role === ROLES.ORG_ADMIN ||
+    currentUser?.role === ROLES.SUPER_ADMIN ||
+    currentUser?.role === 'admin';
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'org'>('profile');
+
+  // Profile Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phoneCountryCode: '+91',
+    phone: '',
+    emergencyContact: '',
+    password: '',
+    profilePhoto: '',
+    city: '',
+    gender: 'MALE',
+    bloodGroup: 'O+',
+    currentAddress: '',
+    permanentAddress: '',
+  });
+
+  // Organization Form State
+  const [orgData, setOrgData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    logo: '',
+  });
 
   useEffect(() => {
     if (currentUser) {
       setFormData({
         name: currentUser.name || '',
         email: currentUser.email || '',
+        phoneCountryCode: '+91',
         phone: currentUser.phone || '',
         emergencyContact: currentUser.emergencyContact || '',
         password: '',
         profilePhoto: currentUser.profilePhoto || '',
         city: currentUser.city || '',
-        gender: currentUser.gender || '',
-        bloodGroup: currentUser.bloodGroup || '',
+        gender: currentUser.gender || 'MALE',
+        bloodGroup: currentUser.bloodGroup || 'O+',
         currentAddress: currentUser.currentAddress || '',
         permanentAddress: currentUser.permanentAddress || '',
       });
@@ -62,21 +116,13 @@ export default function ProfileSettingsPage() {
     }
   }, [currentUser, currentOrg]);
 
-  const handleChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleOrgChange = (name, value) => {
-    setOrgData(prev => ({ ...prev, [name]: value }));
-  };
-
   const pickProfileImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera roll permission is needed.');
+      Alert.alert('Permission Denied', 'Camera roll permission is needed to update your photo.');
       return;
     }
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
@@ -84,206 +130,312 @@ export default function ProfileSettingsPage() {
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      setFormData(prev => ({ ...prev, profilePhoto: base64 }));
+    if (!result.canceled && result.assets?.[0]?.base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setFormData((prev) => ({ ...prev, profilePhoto: base64Image }));
     }
   };
 
-  const handleSubmit = async () => {
-    if (activeTab === 'org') {
-      try {
-        setStatus('idle');
-        const response = await updateOrgDetails(orgData).unwrap();
-        if (response?.organization) {
-          dispatch(setCurrentUser({
-            ...currentUser,
-            organization: { ...currentUser.organization, ...response.organization },
-          }));
-        }
-        setStatus('success');
-        Alert.alert('Success', 'Organization updated successfully!');
-        setTimeout(() => setStatus('idle'), 3000);
-      } catch (err) {
-        setStatus('error');
-        Alert.alert('Error', err?.data?.error || 'Failed to update organization.');
-        setTimeout(() => setStatus('idle'), 3000);
-      }
+  const handleProfileSubmit = async () => {
+    if (!formData.name || !formData.email) {
+      Alert.alert('Validation Error', 'Name and email are required fields.');
       return;
     }
 
     try {
-      setStatus('idle');
-      const response = await updateMe(formData).unwrap();
-      dispatch(setCurrentUser(response.user));
-      setStatus('success');
-      Alert.alert('Success', 'Profile updated successfully!');
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (err) {
-      setStatus('error');
-      Alert.alert('Error', err?.data?.error || err?.message || 'Failed to update profile.');
-      setTimeout(() => setStatus('idle'), 3000);
+      const payload: any = {
+        name: formData.name,
+        phone: formData.phone,
+        emergencyContact: formData.emergencyContact,
+        profilePhoto: formData.profilePhoto,
+        city: formData.city,
+        gender: formData.gender,
+        bloodGroup: formData.bloodGroup,
+        currentAddress: formData.currentAddress,
+        permanentAddress: formData.permanentAddress,
+      };
+
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
+      const res = await updateMe(payload).unwrap();
+      if (res?.user) {
+        dispatch(setCurrentUser({ ...currentUser, ...res.user }));
+      }
+      Alert.alert('Success', 'Your profile settings have been updated.');
+      setFormData((prev) => ({ ...prev, password: '' })); // Clear password
+      refetch();
+    } catch (err: any) {
+      Alert.alert('Update Failed', err?.data?.error || 'Failed to update profile settings.');
     }
   };
 
-  const isSaving = isLoading || isOrgLoading;
+  const handleOrgSubmit = async () => {
+    if (!orgData.name) {
+      Alert.alert('Validation Error', 'Organization name is required.');
+      return;
+    }
+
+    try {
+      const res = await updateOrgDetails(orgData).unwrap();
+      if (res?.organization) {
+        dispatch(
+          setCurrentUser({
+            ...currentUser,
+            organization: { ...currentOrg, ...res.organization },
+          })
+        );
+      }
+      Alert.alert('Success', 'Organization settings have been updated.');
+      refetch();
+    } catch (err: any) {
+      Alert.alert('Update Failed', err?.data?.message || 'Failed to update organization details.');
+    }
+  };
 
   return (
-    <ScrollView className="flex-1 bg-slate-50">
-      <View className="px-5 pt-4 pb-2">
-        <Text className="text-2xl font-extrabold text-slate-900">Account Settings</Text>
-        <Text className="text-slate-500 text-sm mt-1">Update your personal details</Text>
-      </View>
-
-      {/* Tab Switcher */}
+    <View className="flex-1 bg-slate-50">
+      {/* Tabs Header */}
       {isAdmin && (
-        <View className="flex-row mx-5 mt-3 bg-slate-200/60 rounded-xl p-1 gap-1">
-          <Pressable
+        <View className="flex-row px-5 pt-4 pb-2">
+          <TouchableOpacity
             onPress={() => setActiveTab('profile')}
-            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'profile' ? 'bg-white shadow-sm' : ''}`}
+            className={`flex-1 items-center pb-3 border-b-2 ${
+              activeTab === 'profile' ? 'border-blue-600' : 'border-transparent'
+            }`}
           >
-            <Text className={`font-bold text-xs tracking-wider ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-500'}`}>
-              PROFILE
+            <Text
+              className={`font-bold text-sm ${
+                activeTab === 'profile' ? 'text-blue-600' : 'text-slate-500'
+              }`}
+            >
+              Personal Settings
             </Text>
-          </Pressable>
-          <Pressable
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => setActiveTab('org')}
-            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'org' ? 'bg-white shadow-sm' : ''}`}
+            className={`flex-1 items-center pb-3 border-b-2 ${
+              activeTab === 'org' ? 'border-blue-600' : 'border-transparent'
+            }`}
           >
-            <Text className={`font-bold text-xs tracking-wider ${activeTab === 'org' ? 'text-indigo-600' : 'text-slate-500'}`}>
-              ORGANIZATION
+            <Text
+              className={`font-bold text-sm ${
+                activeTab === 'org' ? 'text-blue-600' : 'text-slate-500'
+              }`}
+            >
+              Organization Data
             </Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       )}
 
-      <View className="mx-5 mt-4 mb-8">
-        {activeTab === 'profile' && (
-          <View>
-            {/* Profile Photo */}
-            <View className="bg-white rounded-2xl p-5 border border-slate-100 mb-4 items-center">
-              <Pressable onPress={pickProfileImage}>
-                <View className="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-slate-200 items-center justify-center overflow-hidden">
-                  {formData.profilePhoto ? (
-                    <Image source={{ uri: formData.profilePhoto }} style={{ width: 96, height: 96 }} />
-                  ) : (
-                    <User color="#94a3b8" size={36} />
-                  )}
-                </View>
-                <View className="absolute bottom-0 right-0 bg-indigo-600 rounded-lg p-1.5">
-                  <Camera color="#fff" size={14} />
-                </View>
-              </Pressable>
-              <Text className="text-slate-500 text-xs mt-3">Tap to change photo</Text>
-            </View>
-
-            {/* Profile Fields */}
-            <View className="bg-white rounded-2xl p-5 border border-slate-100 mb-4">
-              <InputField label="Full Name" value={formData.name} onChangeText={(v) => handleChange('name', v)} icon={<User color="#94a3b8" size={18} />} />
-              <InputField label="Email Address" value={formData.email} onChangeText={(v) => handleChange('email', v)} icon={<Mail color="#94a3b8" size={18} />} keyboardType="email-address" />
-              <InputField label="New Password" value={formData.password} onChangeText={(v) => handleChange('password', v)} icon={<Lock color="#94a3b8" size={18} />} secureTextEntry placeholder="Leave blank to keep current" />
-              <InputField label="Phone Number" value={formData.phone} onChangeText={(v) => handleChange('phone', v)} icon={<Phone color="#94a3b8" size={18} />} keyboardType="phone-pad" />
-              <InputField label="City" value={formData.city} onChangeText={(v) => handleChange('city', v)} icon={<MapPin color="#94a3b8" size={18} />} />
-              <InputField label="Current Address" value={formData.currentAddress} onChangeText={(v) => handleChange('currentAddress', v)} icon={<MapPin color="#94a3b8" size={18} />} multiline />
-              <InputField label="Permanent Address" value={formData.permanentAddress} onChangeText={(v) => handleChange('permanentAddress', v)} icon={<MapPin color="#94a3b8" size={18} />} multiline />
-            </View>
-
-            {/* Emergency Contact */}
-            <View className="bg-red-50 rounded-2xl p-5 border border-red-100 mb-4">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Shield color="#ef4444" size={18} />
-                <Text className="text-red-700 font-bold text-sm">Emergency SOS Contact</Text>
-              </View>
-              <InputField label="Emergency Contact Number" value={formData.emergencyContact} onChangeText={(v) => handleChange('emergencyContact', v)} icon={<Phone color="#ef4444" size={18} />} keyboardType="phone-pad" borderColor="border-red-200" />
-              <Text className="text-red-500 text-xs mt-1">This number receives the WhatsApp message & Phone Call when you press SOS.</Text>
-            </View>
-          </View>
-        )}
-
-        {activeTab === 'org' && isAdmin && (
-          <View>
-            {/* Org Logo */}
-            <View className="bg-white rounded-2xl p-5 border border-slate-100 mb-4 items-center">
-              <View className="w-20 h-20 rounded-2xl bg-slate-100 border-2 border-slate-200 items-center justify-center overflow-hidden">
-                {orgData.logo ? (
-                  <Image source={{ uri: orgData.logo }} style={{ width: 80, height: 80 }} />
+      <ScrollView
+        className="flex-1 px-5 pt-4"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {activeTab === 'profile' ? (
+          <SurfaceCard className="p-5">
+            {/* Profile Avatar Selection */}
+            <View className="items-center mb-6">
+              <TouchableOpacity
+                onPress={pickProfileImage}
+                activeOpacity={0.8}
+                className="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 items-center justify-center overflow-hidden relative"
+              >
+                {formData.profilePhoto ? (
+                  <Image source={{ uri: formData.profilePhoto }} style={{ width: 96, height: 96 }} />
                 ) : (
-                  <Building2 color="#94a3b8" size={32} />
+                  <User size={40} color="#94a3b8" />
                 )}
+                <View className="absolute bottom-0 w-full bg-black/40 py-1 items-center">
+                  <Camera size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              <Text className="text-slate-500 text-xs font-medium mt-2">Tap to change photo</Text>
+            </View>
+
+            <TextInput
+              label="Full Name"
+              required
+              value={formData.name}
+              onChangeText={(t) => setFormData((p) => ({ ...p, name: t }))}
+              leftIcon={<User size={16} color="#64748b" />}
+            />
+
+            <TextInput
+              label="Email Address"
+              required
+              value={formData.email}
+              editable={false} // Prevent changing email freely
+              leftIcon={<Mail size={16} color="#64748b" />}
+              helpText="Contact admin to change your registered email address."
+            />
+
+            <CountryPhoneField
+              label="Phone Number"
+              countryCode={formData.phoneCountryCode}
+              phone={formData.phone}
+              onCountryCodeChange={(code) => setFormData((p) => ({ ...p, phoneCountryCode: code }))}
+              onPhoneChange={(phone) => setFormData((p) => ({ ...p, phone }))}
+            />
+
+            <TextInput
+              label="Emergency Contact"
+              value={formData.emergencyContact}
+              onChangeText={(t) => setFormData((p) => ({ ...p, emergencyContact: t }))}
+              keyboardType="phone-pad"
+              leftIcon={<HeartPulse size={16} color="#ef4444" />}
+              helpText="This number is automatically alerted when you trigger SOS."
+            />
+
+            {/* Gender Selection */}
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Gender</Text>
+              <View className="flex-row gap-2">
+                {GENDERS.map((g) => {
+                  const isSelected = formData.gender === g.value;
+                  return (
+                    <TouchableOpacity
+                      key={g.value}
+                      onPress={() => setFormData((p) => ({ ...p, gender: g.value }))}
+                      className={`flex-1 py-2.5 rounded-xl border items-center ${
+                        isSelected
+                          ? 'bg-blue-600 border-blue-600 shadow-sm'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-bold ${
+                          isSelected ? 'text-white' : 'text-slate-700'
+                        }`}
+                      >
+                        {g.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              <Text className="text-slate-900 font-bold text-lg mt-3">{orgData.name || 'Organization'}</Text>
             </View>
 
-            {/* Org Fields */}
-            <View className="bg-white rounded-2xl p-5 border border-slate-100 mb-4">
-              <InputField label="Organization Name" value={orgData.name} onChangeText={(v) => handleOrgChange('name', v)} icon={<Building2 color="#94a3b8" size={18} />} />
-              <InputField label="Organization Email" value={orgData.email} onChangeText={(v) => handleOrgChange('email', v)} icon={<Mail color="#94a3b8" size={18} />} keyboardType="email-address" />
-              <InputField label="Organization Phone" value={orgData.phone} onChangeText={(v) => handleOrgChange('phone', v)} icon={<Phone color="#94a3b8" size={18} />} keyboardType="phone-pad" />
-              <InputField label="City" value={orgData.city} onChangeText={(v) => handleOrgChange('city', v)} icon={<MapPin color="#94a3b8" size={18} />} />
-              <InputField label="State" value={orgData.state} onChangeText={(v) => handleOrgChange('state', v)} icon={<MapPin color="#94a3b8" size={18} />} />
-              <InputField label="Country" value={orgData.country} onChangeText={(v) => handleOrgChange('country', v)} icon={<MapPin color="#94a3b8" size={18} />} />
-              <InputField label="Address" value={orgData.address} onChangeText={(v) => handleOrgChange('address', v)} icon={<MapPin color="#94a3b8" size={18} />} multiline />
+            {/* Blood Group */}
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Blood Group</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {BLOOD_GROUPS.map((bg) => {
+                  const isSelected = formData.bloodGroup === bg;
+                  return (
+                    <TouchableOpacity
+                      key={bg}
+                      onPress={() => setFormData((p) => ({ ...p, bloodGroup: bg }))}
+                      className={`px-3 py-1.5 rounded-lg border ${
+                        isSelected
+                          ? 'bg-red-600 border-red-600 shadow-sm'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-bold ${
+                          isSelected ? 'text-white' : 'text-slate-700'
+                        }`}
+                      >
+                        {bg}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+
+            <TextInput
+              label="City"
+              value={formData.city}
+              onChangeText={(t) => setFormData((p) => ({ ...p, city: t }))}
+              leftIcon={<MapPin size={16} color="#64748b" />}
+            />
+
+            <TextInput
+              label="Update Password"
+              placeholder="Leave blank to keep current password"
+              value={formData.password}
+              onChangeText={(t) => setFormData((p) => ({ ...p, password: t }))}
+              isPassword
+              leftIcon={<Lock size={16} color="#64748b" />}
+            />
+
+            <Button
+              onPress={handleProfileSubmit}
+              isLoading={isUpdatingProfile}
+              size="lg"
+              className="bg-blue-600 rounded-2xl shadow-md shadow-blue-500/20 mt-2"
+            >
+              <View className="flex-row items-center justify-center gap-2">
+                <Save size={16} color="#fff" />
+                <Text className="text-white font-extrabold text-sm">Save Profile Changes</Text>
+              </View>
+            </Button>
+          </SurfaceCard>
+        ) : (
+          <SurfaceCard className="p-5">
+            <View className="flex-row items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              <View className="w-12 h-12 rounded-2xl bg-indigo-50 items-center justify-center border border-indigo-100">
+                <Building2 size={24} color="#4f46e5" />
+              </View>
+              <View>
+                <Text className="text-lg font-black text-slate-900">Organization Settings</Text>
+                <Text className="text-xs text-slate-500 font-medium mt-0.5">
+                  Update primary registration details
+                </Text>
+              </View>
+            </View>
+
+            <TextInput
+              label="Organization Name"
+              required
+              value={orgData.name}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, name: t }))}
+            />
+            <TextInput
+              label="Contact Email"
+              value={orgData.email}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, email: t }))}
+            />
+            <TextInput
+              label="Contact Phone"
+              value={orgData.phone}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, phone: t }))}
+            />
+            <TextInput
+              label="City"
+              value={orgData.city}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, city: t }))}
+            />
+            <TextInput
+              label="State / Province"
+              value={orgData.state}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, state: t }))}
+            />
+            <TextInput
+              label="Physical Address"
+              value={orgData.address}
+              onChangeText={(t) => setOrgData((p) => ({ ...p, address: t }))}
+            />
+
+            <Button
+              onPress={handleOrgSubmit}
+              isLoading={isUpdatingOrg}
+              size="lg"
+              className="bg-indigo-600 rounded-2xl shadow-md shadow-indigo-500/20 mt-2"
+            >
+              <View className="flex-row items-center justify-center gap-2">
+                <Save size={16} color="#fff" />
+                <Text className="text-white font-extrabold text-sm">Save Organization Data</Text>
+              </View>
+            </Button>
+          </SurfaceCard>
         )}
-
-        {/* Save Button */}
-        <Pressable
-          onPress={handleSubmit}
-          disabled={isSaving}
-          className={`flex-row items-center justify-center gap-2 py-4 rounded-2xl mt-2 ${isSaving ? 'bg-indigo-400' : 'bg-indigo-600 active:bg-indigo-700'}`}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 color="#fff" size={20} />
-              <Text className="text-white font-bold text-base">Saving...</Text>
-            </>
-          ) : status === 'success' ? (
-            <>
-              <CheckCircle2 color="#fff" size={20} />
-              <Text className="text-white font-bold text-base">Saved!</Text>
-            </>
-          ) : (
-            <>
-              <Save color="#fff" size={20} />
-              <Text className="text-white font-bold text-base">Save Changes</Text>
-            </>
-          )}
-        </Pressable>
-      </View>
-    </ScrollView>
-  );
-}
-
-function InputField({
-  label,
-  value,
-  onChangeText,
-  icon = null,
-  keyboardType = 'default',
-  secureTextEntry = false,
-  placeholder = '',
-  multiline = false,
-  borderColor = 'border-slate-200',
-}: any) {
-  return (
-    <View className="mb-4">
-      <Text className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{label}</Text>
-      <View className={`flex-row items-center bg-slate-50 rounded-xl border ${borderColor} px-3`}>
-        {icon && <View className="mr-2">{icon}</View>}
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          keyboardType={keyboardType}
-          secureTextEntry={secureTextEntry}
-          placeholder={placeholder || label}
-          placeholderTextColor="#94a3b8"
-          multiline={multiline}
-          numberOfLines={multiline ? 3 : 1}
-          className="flex-1 py-3 text-slate-900 text-sm font-medium"
-          style={multiline ? { textAlignVertical: 'top', minHeight: 60 } : {}}
-        />
-      </View>
+      </ScrollView>
     </View>
   );
 }

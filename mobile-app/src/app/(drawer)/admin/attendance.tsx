@@ -3,13 +3,11 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   Image,
   Alert,
-  Modal,
-  TextInput,
   ActivityIndicator,
-  Linking,
+  Platform,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import {
@@ -19,29 +17,36 @@ import {
   Settings,
   RefreshCw,
   Eye,
-  ExternalLink,
   ShieldCheck,
   CheckCircle2,
   XCircle,
   LocateFixed,
   Save,
+  User,
+  Calendar,
 } from 'lucide-react-native';
+
 import {
   useGetOrgAttendanceQuery,
   useGetOrgAttendanceSettingsQuery,
   useUpdateOrgAttendanceSettingsMutation,
 } from '@/services/api/orgApi';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { BadgePill } from '@/components/ui/BadgePill';
+import { ActionModal } from '@/components/ui/ActionModal';
+import { TextInput } from '@/components/ui/TextInput';
+import { Button } from '@/components/ui/Button';
 import { getCurrentCoordinates } from '@/utils/location';
 import { formatHoursValue } from '@/utils/time';
 
-const formatDateTime = (value) => {
+const formatDateTime = (value: any) => {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-const formatDateOnly = (value) => {
+const formatDateOnly = (value: any) => {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
@@ -53,9 +58,9 @@ const formatDateOnly = (value) => {
 };
 
 export default function AdminAttendanceScreen() {
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state: any) => state.auth);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProofLog, setSelectedProofLog] = useState(null);
+  const [selectedProofLog, setSelectedProofLog] = useState<any>(null);
   const [geofenceModalOpen, setGeofenceModalOpen] = useState(false);
 
   // Geofence settings form
@@ -69,6 +74,7 @@ export default function AdminAttendanceScreen() {
     data: attendanceData,
     isLoading: logsLoading,
     refetch: refetchLogs,
+    isFetching,
   } = useGetOrgAttendanceQuery({ limit: 200 }, { skip: !user });
 
   const {
@@ -81,7 +87,7 @@ export default function AdminAttendanceScreen() {
   const records = useMemo(() => {
     const items = Array.isArray(attendanceData?.items) ? attendanceData.items : [];
     if (!searchTerm.trim()) return items;
-    return items.filter((log) => {
+    return items.filter((log: any) => {
       const name = log?.user?.name || log?.userName || '';
       const email = log?.user?.email || log?.userEmail || '';
       return (
@@ -92,51 +98,54 @@ export default function AdminAttendanceScreen() {
   }, [attendanceData, searchTerm]);
 
   const openGeofenceSettings = () => {
-    if (settingsData?.settings) {
-      setGeoLat(String(settingsData.settings.latitude || ''));
-      setGeoLng(String(settingsData.settings.longitude || ''));
-      setGeoRadius(String(settingsData.settings.radiusMeters || settingsData.settings.radius || '100'));
+    const currentSettings = settingsData?.settings || settingsData?.data;
+    if (currentSettings) {
+      setGeoLat(String(currentSettings.latitude || currentSettings.coordinates?.[1] || ''));
+      setGeoLng(String(currentSettings.longitude || currentSettings.coordinates?.[0] || ''));
+      setGeoRadius(String(currentSettings.radiusMeters || currentSettings.radius || '100'));
     }
     setGeofenceModalOpen(true);
   };
 
-  const handleDetectLocation = async () => {
+  const handleDetectGPS = async () => {
     try {
       setDetectingLoc(true);
       const coords = await getCurrentCoordinates();
-      setGeoLng(String(coords[0]));
-      setGeoLat(String(coords[1]));
-      Alert.alert('Location Locked', `Lat: ${coords[1]}, Lng: ${coords[0]}`);
-    } catch (e) {
-      Alert.alert('GPS Error', e?.message || 'Could not acquire GPS position.');
+      if (coords) {
+        setGeoLat(String(coords[1].toFixed(6)));
+        setGeoLng(String(coords[0].toFixed(6)));
+        Alert.alert('GPS Located', `Coordinates captured: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`);
+      }
+    } catch (err: any) {
+      Alert.alert('GPS Error', err.message || 'Could not fetch current device coordinates.');
     } finally {
       setDetectingLoc(false);
     }
   };
 
   const handleSaveGeofence = async () => {
-    const latitude = parseFloat(geoLat);
-    const longitude = parseFloat(geoLng);
-    const radiusMeters = parseInt(geoRadius, 10);
+    const lat = parseFloat(geoLat);
+    const lng = parseFloat(geoLng);
+    const rad = parseInt(geoRadius, 10);
 
-    if (isNaN(latitude) || isNaN(longitude) || isNaN(radiusMeters)) {
-      Alert.alert('Invalid Input', 'Please enter valid numbers for latitude, longitude, and radius.');
+    if (isNaN(lat) || isNaN(lng)) {
+      Alert.alert('Validation Error', 'Please enter valid Latitude and Longitude coordinates.');
       return;
     }
 
     try {
       setSavingSettings(true);
       await updateSettings({
-        latitude,
-        longitude,
-        radiusMeters,
-        radius: radiusMeters,
+        latitude: lat,
+        longitude: lng,
+        radiusMeters: rad || 100,
       }).unwrap();
-      Alert.alert('Success', 'Geofencing settings updated successfully.');
+
+      Alert.alert('Success', 'Geofence safety parameters updated.');
       setGeofenceModalOpen(false);
-      await refetchSettings();
-    } catch (e) {
-      Alert.alert('Save Failed', e?.data?.message || 'Could not update geofence settings.');
+      refetchSettings();
+    } catch (err: any) {
+      Alert.alert('Update Failed', err?.data?.message || 'Could not save attendance settings.');
     } finally {
       setSavingSettings(false);
     }
@@ -144,244 +153,252 @@ export default function AdminAttendanceScreen() {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {/* Top Banner */}
-      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100">
-        <View className="flex-row items-center justify-between">
+      {/* Header */}
+      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100 shadow-sm">
+        <View className="flex-row items-center justify-between mb-3">
           <View>
-            <Text className="text-xl font-black text-slate-900">Org Attendance</Text>
-            <Text className="text-slate-500 text-xs mt-0.5">
-              Live logs, geofencing & selfie proofs
+            <Text className="text-2xl font-black text-slate-900 tracking-tight">Attendance</Text>
+            <Text className="text-slate-400 font-medium text-xs">
+              {records.length} Logs recorded
             </Text>
           </View>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={openGeofenceSettings}
-              className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl active:bg-indigo-100"
-            >
-              <Settings color="#4f46e5" size={18} />
-            </Pressable>
-            <Pressable
+
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
               onPress={() => refetchLogs()}
               className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
             >
-              <RefreshCw color="#64748b" size={18} />
-            </Pressable>
+              <RefreshCw size={16} color="#64748b" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={openGeofenceSettings}
+              className="flex-row items-center gap-1.5 bg-emerald-600 px-3.5 py-2.5 rounded-xl shadow-md shadow-emerald-500/20 active:bg-emerald-700"
+            >
+              <Settings size={16} color="#fff" />
+              <Text className="text-white font-bold text-xs">Geofence GPS</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Search Field */}
-        <View className="flex-row items-center bg-slate-100 rounded-2xl px-3.5 py-2 mt-3">
-          <Search color="#94a3b8" size={18} />
-          <TextInput
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            placeholder="Search by member name or email..."
-            className="flex-1 ml-2 text-sm text-slate-900 font-medium"
-          />
-        </View>
+        {/* Search */}
+        <TextInput
+          placeholder="Search logs by member name..."
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          leftIcon={<Search size={16} color="#94a3b8" />}
+        />
       </View>
 
       {/* Attendance Logs List */}
-      <ScrollView className="flex-1 px-4 pt-3">
-        {logsLoading ? (
+      <ScrollView
+        className="flex-1 px-5 pt-4"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {logsLoading || isFetching ? (
           <View className="py-16 items-center">
-            <ActivityIndicator color="#4f46e5" size="large" />
-            <Text className="text-slate-400 text-xs font-medium mt-2">Loading attendance logs...</Text>
+            <ActivityIndicator size="large" color="#059669" />
+            <Text className="text-slate-400 font-semibold text-xs mt-3">Loading records...</Text>
           </View>
         ) : records.length === 0 ? (
           <View className="py-16 items-center">
-            <ShieldCheck color="#cbd5e1" size={40} />
-            <Text className="text-slate-400 font-bold text-sm mt-2">No attendance logs found</Text>
+            <Calendar size={48} color="#cbd5e1" />
+            <Text className="text-slate-700 font-bold text-base mt-3">No attendance logs found</Text>
+            <Text className="text-slate-400 text-xs text-center mt-1">
+              Members will appear here once they punch in within your practice geofence.
+            </Text>
           </View>
         ) : (
-          records.map((log, index) => {
-            const memberName = log?.user?.name || log?.userName || 'Member';
-            const memberEmail = log?.user?.email || log?.userEmail || '';
-            const isPresent = log?.status === 'PRESENT';
-            const hasSelfie = Boolean(log?.punchInSelfie || log?.punchInSelfieUrl);
+          records.map((log: any, idx: number) => {
+            const userName = log?.user?.name || log?.userName || 'Member';
+            const userPhone = log?.user?.phone || log?.userPhone || '';
+            const punchIn = log?.punchIn || log?.checkInTime;
+            const punchOut = log?.punchOut || log?.checkOutTime;
+            const hasSelfie = log?.punchInSelfieUrl || log?.selfieUrl;
 
             return (
-              <View
-                key={log?.id || index}
-                className="bg-white rounded-2xl p-4 mb-3 border border-slate-100 shadow-xs"
-              >
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-1 mr-2">
-                    <Text className="text-slate-900 font-bold text-base" numberOfLines={1}>
-                      {memberName}
-                    </Text>
-                    <Text className="text-slate-400 text-xs">{memberEmail}</Text>
-                  </View>
-
-                  <View className="items-end">
-                    <View
-                      className={`px-2.5 py-0.5 rounded-lg ${
-                        isPresent ? 'bg-emerald-100' : 'bg-slate-100'
-                      }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-extrabold uppercase ${
-                          isPresent ? 'text-emerald-700' : 'text-slate-600'
-                        }`}
-                      >
-                        {log?.status || 'PRESENT'}
+              <SurfaceCard key={log?.id || idx} className="mb-3 p-4">
+                <View className="flex-row items-center justify-between mb-2 pb-2 border-b border-slate-100">
+                  <View className="flex-row items-center gap-2">
+                    <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center">
+                      <User size={16} color="#2563eb" />
+                    </View>
+                    <View>
+                      <Text className="font-extrabold text-slate-900 text-sm">{userName}</Text>
+                      <Text className="text-[10px] text-slate-400 font-medium">
+                        {formatDateOnly(log?.date || punchIn)}
                       </Text>
                     </View>
-                    <Text className="text-slate-400 text-[10px] mt-1">
-                      {formatDateOnly(log?.date)}
+                  </View>
+
+                  <BadgePill
+                    label={punchOut ? 'COMPLETED' : punchIn ? 'PUNCHED IN' : 'RECORDED'}
+                    variant={punchOut ? 'active' : 'primary'}
+                    size="sm"
+                  />
+                </View>
+
+                {/* Time & Duration Grid */}
+                <View className="flex-row justify-between items-center py-1">
+                  <View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">In Time</Text>
+                    <Text className="text-xs font-black text-slate-800">
+                      {formatDateTime(punchIn)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Out Time</Text>
+                    <Text className="text-xs font-black text-slate-800">
+                      {formatDateTime(punchOut)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Duration</Text>
+                    <Text className="text-xs font-black text-emerald-600">
+                      {formatHoursValue(log?.workedHours || log?.workedMinutes, {
+                        fromMinutes: log?.workedHours == null,
+                      })}
                     </Text>
                   </View>
                 </View>
 
-                <View className="flex-row items-center justify-between pt-2 border-t border-slate-50 mt-1">
-                  <View className="flex-row items-center gap-2">
-                    <Clock color="#94a3b8" size={14} />
-                    <Text className="text-slate-600 text-xs font-semibold">
-                      {formatDateTime(log?.punchInAt)} - {formatDateTime(log?.punchOutAt)}
-                    </Text>
-                  </View>
-
-                  {hasSelfie && (
-                    <Pressable
-                      onPress={() => setSelectedProofLog(log)}
-                      className="flex-row items-center gap-1 bg-indigo-50 px-2.5 py-1 rounded-lg active:bg-indigo-100"
-                    >
-                      <Eye color="#4f46e5" size={12} />
-                      <Text className="text-indigo-600 text-xs font-bold">Proof</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
+                {/* Selfie Proof Preview Trigger */}
+                {hasSelfie && (
+                  <TouchableOpacity
+                    onPress={() => setSelectedProofLog(log)}
+                    className="mt-2.5 pt-2 border-t border-slate-100 flex-row items-center justify-between"
+                  >
+                    <View className="flex-row items-center gap-1.5">
+                      <ShieldCheck size={14} color="#059669" />
+                      <Text className="text-xs font-bold text-emerald-700">
+                        GPS & Selfie Verified
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center gap-1">
+                      <Eye size={12} color="#2563eb" />
+                      <Text className="text-xs font-bold text-blue-600">View Proof</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </SurfaceCard>
             );
           })
         )}
-        <View className="h-10" />
       </ScrollView>
 
       {/* Selfie Proof Modal */}
-      <Modal visible={Boolean(selectedProofLog)} transparent animationType="fade">
-        <View className="flex-1 bg-black/75 justify-center items-center p-5">
-          <View className="bg-white rounded-3xl p-6 w-full max-w-sm">
-            <Text className="text-slate-900 font-extrabold text-lg mb-1">Selfie Verification</Text>
-            <Text className="text-slate-500 text-xs mb-4">
-              {selectedProofLog?.user?.name || 'Member'} • {formatDateOnly(selectedProofLog?.date)}
-            </Text>
-
-            {/* Selfie Image */}
-            <View className="w-full h-64 rounded-2xl bg-slate-100 overflow-hidden items-center justify-center border border-slate-200">
-              {selectedProofLog?.punchInSelfie || selectedProofLog?.punchInSelfieUrl ? (
+      {selectedProofLog && (
+        <ActionModal
+          visible={Boolean(selectedProofLog)}
+          onClose={() => setSelectedProofLog(null)}
+          title="Attendance Verification Proof"
+          subtitle={selectedProofLog?.user?.name || 'Member Verification'}
+        >
+          <View className="items-center mb-4">
+            <View className="w-48 h-48 rounded-3xl bg-slate-100 border-2 border-slate-200 items-center justify-center overflow-hidden mb-3">
+              {selectedProofLog?.punchInSelfieUrl || selectedProofLog?.selfieUrl ? (
                 <Image
-                  source={{ uri: selectedProofLog.punchInSelfie || selectedProofLog.punchInSelfieUrl }}
-                  style={{ width: '100%', height: '100%' }}
+                  source={{
+                    uri: selectedProofLog?.punchInSelfieUrl || selectedProofLog?.selfieUrl,
+                  }}
+                  style={{ width: 192, height: 192 }}
                   resizeMode="cover"
                 />
               ) : (
-                <Text className="text-slate-400 text-xs">No image proof available</Text>
+                <User size={64} color="#94a3b8" />
               )}
             </View>
-
-            {/* Punch Location Coordinates */}
-            {selectedProofLog?.punchInCoordinates && (
-              <Pressable
-                onPress={() => {
-                  const [lng, lat] = selectedProofLog.punchInCoordinates;
-                  Linking.openURL(`https://maps.google.com/?q=${lat},${lng}`);
-                }}
-                className="mt-4 flex-row items-center justify-center gap-2 py-3 bg-slate-100 rounded-xl"
-              >
-                <ExternalLink color="#4f46e5" size={16} />
-                <Text className="text-indigo-600 font-bold text-xs">Open Punch Location on Maps</Text>
-              </Pressable>
-            )}
-
-            <Pressable
-              onPress={() => setSelectedProofLog(null)}
-              className="mt-3 py-3 bg-slate-900 rounded-xl items-center"
-            >
-              <Text className="text-white font-bold text-sm">Close</Text>
-            </Pressable>
           </View>
-        </View>
-      </Modal>
 
-      {/* Geofencing Settings Modal */}
-      <Modal visible={geofenceModalOpen} transparent animationType="slide">
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-slate-900">Geofence Settings</Text>
-                <Text className="text-slate-500 text-xs">Define office coordinates and allowed radius</Text>
+          <SurfaceCard variant="flat" className="p-4 mb-4">
+            <View className="space-y-2">
+              <View className="flex-row justify-between">
+                <Text className="text-xs font-semibold text-slate-500">Punch In Time:</Text>
+                <Text className="text-xs font-bold text-slate-900">
+                  {formatDateTime(selectedProofLog?.punchIn)}
+                </Text>
               </View>
-              <Pressable onPress={() => setGeofenceModalOpen(false)}>
-                <Text className="text-slate-400 font-bold text-sm">Cancel</Text>
-              </Pressable>
+              <View className="flex-row justify-between">
+                <Text className="text-xs font-semibold text-slate-500">GPS Validation:</Text>
+                <Text className="text-xs font-bold text-emerald-600">
+                  {selectedProofLog?.punchInValid !== false ? 'Inside Geofence' : 'Outside Geofence'}
+                </Text>
+              </View>
             </View>
+          </SurfaceCard>
+        </ActionModal>
+      )}
 
-            <Pressable
-              onPress={handleDetectLocation}
+      {/* Geofence Configuration Modal */}
+      {geofenceModalOpen && (
+        <ActionModal
+          visible={geofenceModalOpen}
+          onClose={() => setGeofenceModalOpen(false)}
+          title="Practice Ground Geofence"
+          subtitle="Configure GPS boundary for automated member attendance"
+        >
+          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[500px]">
+            {/* Auto Detect Button */}
+            <TouchableOpacity
+              onPress={handleDetectGPS}
               disabled={detectingLoc}
-              className="flex-row items-center justify-center gap-2 bg-blue-50 border border-blue-200 py-3.5 rounded-2xl mb-4"
+              className="flex-row items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 py-3 rounded-2xl mb-4 active:bg-emerald-100"
             >
               {detectingLoc ? (
-                <ActivityIndicator color="#2563eb" size="small" />
+                <ActivityIndicator size="small" color="#059669" />
               ) : (
-                <>
-                  <LocateFixed color="#2563eb" size={18} />
-                  <Text className="text-blue-700 font-bold text-sm">Detect Current Location as Org Center</Text>
-                </>
+                <LocateFixed size={16} color="#059669" />
               )}
-            </Pressable>
+              <Text className="text-xs font-bold text-emerald-700">
+                {detectingLoc ? 'Detecting Location...' : 'Auto-Capture Current GPS Coordinates'}
+              </Text>
+            </TouchableOpacity>
 
-            <View className="flex-row gap-3 mb-3">
-              <View className="flex-1">
-                <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Latitude</Text>
-                <TextInput
-                  value={geoLat}
-                  onChangeText={setGeoLat}
-                  placeholder="e.g. 18.5204"
-                  keyboardType="numeric"
-                  className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium"
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Longitude</Text>
-                <TextInput
-                  value={geoLng}
-                  onChangeText={setGeoLng}
-                  placeholder="e.g. 73.8567"
-                  keyboardType="numeric"
-                  className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium"
-                />
-              </View>
-            </View>
-
-            <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Radius (Meters)</Text>
             <TextInput
-              value={geoRadius}
-              onChangeText={setGeoRadius}
-              placeholder="e.g. 100"
+              label="Latitude Coordinate"
+              required
+              placeholder="e.g. 18.520430"
+              value={geoLat}
+              onChangeText={setGeoLat}
               keyboardType="numeric"
-              className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-6"
+              leftIcon={<MapPin size={16} color="#64748b" />}
             />
 
-            <Pressable
+            <TextInput
+              label="Longitude Coordinate"
+              required
+              placeholder="e.g. 73.856743"
+              value={geoLng}
+              onChangeText={setGeoLng}
+              keyboardType="numeric"
+              leftIcon={<MapPin size={16} color="#64748b" />}
+            />
+
+            <TextInput
+              label="Allowed Attendance Radius (Meters)"
+              required
+              placeholder="100"
+              value={geoRadius}
+              onChangeText={setGeoRadius}
+              keyboardType="number-pad"
+              leftIcon={<ShieldCheck size={16} color="#64748b" />}
+            />
+
+            <Button
               onPress={handleSaveGeofence}
-              disabled={savingSettings}
-              className="bg-indigo-600 py-4 rounded-2xl items-center justify-center active:bg-indigo-700 mb-4 flex-row gap-2"
+              isLoading={savingSettings}
+              size="lg"
+              className="bg-emerald-600 rounded-2xl shadow-md shadow-emerald-500/20 mt-2 mb-4"
             >
-              {savingSettings ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Save color="#fff" size={18} />
-                  <Text className="text-white font-extrabold text-base">Save Geofence Settings</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+              <View className="flex-row items-center justify-center gap-2">
+                <Save size={16} color="#fff" />
+                <Text className="text-white font-extrabold text-sm">Save Geofence Boundary</Text>
+              </View>
+            </Button>
+          </ScrollView>
+        </ActionModal>
+      )}
     </View>
   );
 }

@@ -25,7 +25,7 @@ import { logout } from '@/store/slices/authSlice';
 import { ROLES, formatRoleLabel } from '@/utils/roles';
 
 function CustomDrawerContent(props) {
-  const { user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const pathname = usePathname();
 
@@ -47,7 +47,7 @@ function CustomDrawerContent(props) {
           { label: 'Dashboard', route: '/(drawer)/admin/dashboard', icon: Home, color: '#4f46e5' },
           { label: 'Attendance & Geofence', route: '/(drawer)/admin/attendance', icon: CalendarCheck, color: '#059669' },
           { label: 'Requests Hub', route: '/(drawer)/admin/requests', icon: UserPlus, color: '#d97706' },
-          { label: 'Members Directory', route: '/(drawer)/admin/users', icon: Users, color: '#3b82f6' },
+          { label: 'Members Directory', route: '/(drawer)/admin/members', icon: Users, color: '#3b82f6' },
           { label: 'Teams & Pods', route: '/(drawer)/admin/teams', icon: UsersRound, color: '#8b5cf6' },
           { label: 'Posts & Polls', route: '/(drawer)/admin/posts', icon: Bell, color: '#ec4899' },
           { label: 'Instruments Inventory', route: '/(drawer)/admin/instruments', icon: Package, color: '#f97316' },
@@ -116,7 +116,7 @@ function CustomDrawerContent(props) {
           return (
             <Pressable
               key={item.route}
-              onPress={() => router.push(item.route)}
+              onPress={() => router.push(item.route as any)}
               className={`flex-row items-center gap-3 mx-3 my-1 px-4 py-3 rounded-xl ${
                 isActive ? 'bg-indigo-50' : ''
               }`}
@@ -151,7 +151,7 @@ function CustomDrawerContent(props) {
 }
 
 export default function DrawerLayout() {
-  const { user, loading } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state: any) => state.auth);
 
   if (loading) {
     return null;
@@ -179,6 +179,14 @@ export default function DrawerLayout() {
           headerStyle: {
             backgroundColor: '#ffffff',
           },
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/(drawer)/sos')}
+              className="mr-4 bg-red-50 w-9 h-9 rounded-full items-center justify-center border border-red-100"
+            >
+              <Shield color="#ef4444" size={18} />
+            </Pressable>
+          ),
         }}
       >
         <Drawer.Screen
@@ -203,7 +211,7 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="admin/users/index"
+          name="admin/members"
           options={{
             headerTitle: 'Members Directory',
             drawerItemStyle: { display: 'none' },

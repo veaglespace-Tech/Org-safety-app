@@ -30,6 +30,7 @@ export default function UserModal({ isOpen, onClose, user = null }) {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(userSchema),
@@ -80,6 +81,8 @@ export default function UserModal({ isOpen, onClose, user = null }) {
   }, [isOpen, user, reset]);
 
   if (!isOpen) return null;
+
+  console.log("Form State:", watch(), errors);
 
   const onSubmit = async (data) => {
     try {

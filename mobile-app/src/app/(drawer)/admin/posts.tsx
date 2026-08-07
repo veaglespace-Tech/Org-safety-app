@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   Image,
   Alert,
-  Modal,
-  TextInput,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,13 +22,20 @@ import {
   MessageSquare,
   Vote,
   Calendar,
+  X,
 } from 'lucide-react-native';
+
 import {
   useGetOrgPostsQuery,
   useCreatePostMutation,
   useVoteOnPostMutation,
   useDeletePostMutation,
 } from '@/services/api/postApi';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { BadgePill } from '@/components/ui/BadgePill';
+import { ActionModal } from '@/components/ui/ActionModal';
+import { Button } from '@/components/ui/Button';
+import { TextInput } from '@/components/ui/TextInput';
 
 const POST_TYPES = [
   { label: 'Notification', value: 'NOTIFICATION' },
@@ -38,8 +44,20 @@ const POST_TYPES = [
   { label: 'News', value: 'NEWS' },
 ];
 
+const formatDateTime = (value: any) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export default function AdminPostsScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -47,7 +65,6 @@ export default function AdminPostsScreen() {
   const [postType, setPostType] = useState('NOTIFICATION');
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [attachmentBase64, setAttachmentBase64] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [votingId, setVotingId] = useState('');
 
   const {
@@ -56,30 +73,44 @@ export default function AdminPostsScreen() {
     refetch,
   } = useGetOrgPostsQuery({ limit: 50 }, { skip: !authUser });
 
-  const [createPost] = useCreatePostMutation();
+  const [createPost, { isLoading: isSubmitting }] = useCreatePostMutation();
   const [voteOnPost] = useVoteOnPostMutation();
   const [deletePost] = useDeletePostMutation();
 
-  const posts = Array.isArray(postsData?.items)
-    ? postsData.items
-    : Array.isArray(postsData?.data)
-    ? postsData.data
-    : [];
+  const posts = useMemo(() => {
+    return Array.isArray(postsData?.items)
+      ? postsData.items
+      : Array.isArray(postsData?.data)
+      ? postsData.data
+      : [];
+  }, [postsData]);
 
   const handleAddPollOption = () => {
     if (pollOptions.length >= 6) return;
     setPollOptions([...pollOptions, '']);
   };
 
-  const handlePollOptionChange = (text, index) => {
+  const handlePollOptionChange = (text: string, index: number) => {
     const next = [...pollOptions];
     next[index] = text;
     setPollOptions(next);
   };
 
+  const handleRemovePollOption = (index: number) => {
+    if (pollOptions.length <= 2) return;
+    const next = [...pollOptions];
+    next.splice(index, 1);
+    setPollOptions(next);
+  };
+
   const handlePickAttachment = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Gallery access is needed for attachments.');
+      return;
+    }
     const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.6,
       base64: true,
@@ -104,7 +135,6 @@ export default function AdminPostsScreen() {
     }
 
     try {
-      setSubmitting(true);
       const payload = {
         title: title.trim(),
         content: content.trim(),
@@ -124,27 +154,25 @@ export default function AdminPostsScreen() {
       setPostType('NOTIFICATION');
       setPollOptions(['', '']);
       setAttachmentBase64('');
-      await refetch();
-    } catch (err) {
+      refetch();
+    } catch (err: any) {
       Alert.alert('Publish Failed', err?.data?.message || 'Could not create post.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  const handleVote = async (postId, optionIndex) => {
+  const handleVote = async (postId: string, optionIndex: number) => {
     try {
       setVotingId(`${postId}-${optionIndex}`);
       await voteOnPost({ id: postId, optionIndex }).unwrap();
-      await refetch();
-    } catch (err) {
+      refetch();
+    } catch (err: any) {
       Alert.alert('Vote Failed', err?.data?.message || 'Could not register your vote.');
     } finally {
       setVotingId('');
     }
   };
 
-  const handleDelete = (postId) => {
+  const handleDelete = (postId: string) => {
     Alert.alert('Delete Post', 'Are you sure you want to delete this post?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -153,8 +181,8 @@ export default function AdminPostsScreen() {
         onPress: async () => {
           try {
             await deletePost(postId).unwrap();
-            await refetch();
-          } catch (e) {
+            refetch();
+          } catch (e: any) {
             Alert.alert('Failed', e?.data?.message || 'Could not delete post.');
           }
         },
@@ -162,279 +190,279 @@ export default function AdminPostsScreen() {
     ]);
   };
 
+  const renderPostContent = (post: any) => {
+    const isPoll = post.type === 'POLL';
+    const totalVotes = isPoll
+      ? post.pollOptions?.reduce((acc: number, opt: any) => acc + (opt.votes || 0), 0) || 0
+      : 0;
+
+    return (
+      <SurfaceCard key={post.id} className="mb-4 overflow-hidden border border-slate-200">
+        <View className="p-4">
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center gap-2">
+              <View
+                className={`w-8 h-8 rounded-full items-center justify-center ${
+                  isPoll ? 'bg-indigo-50 border border-indigo-100' : 'bg-rose-50 border border-rose-100'
+                }`}
+              >
+                {isPoll ? (
+                  <Vote size={14} color="#4f46e5" />
+                ) : (
+                  <Bell size={14} color="#e11d48" />
+                )}
+              </View>
+              <View>
+                <Text className="text-xs font-black text-slate-800">
+                  {post.authorName || 'Admin'}
+                </Text>
+                <Text className="text-[10px] font-bold text-slate-400">
+                  {formatDateTime(post.createdAt)}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center gap-2">
+              <BadgePill
+                label={post.type}
+                variant={isPoll ? 'primary' : 'warning'}
+                size="sm"
+              />
+              <TouchableOpacity
+                onPress={() => handleDelete(post.id)}
+                className="w-7 h-7 bg-red-50 rounded-full items-center justify-center border border-red-100 active:bg-red-100"
+              >
+                <Trash2 size={12} color="#dc2626" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text className="text-lg font-black text-slate-900 mb-1">{post.title}</Text>
+          <Text className="text-sm font-medium text-slate-600 leading-5">{post.content}</Text>
+        </View>
+
+        {post.attachment && (
+          <Image
+            source={{ uri: post.attachment }}
+            style={{ width: '100%', height: 200 }}
+            resizeMode="cover"
+          />
+        )}
+
+        {isPoll && post.pollOptions && (
+          <View className="bg-slate-50 border-t border-slate-100 p-4">
+            <Text className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">
+              Live Poll ({totalVotes} votes)
+            </Text>
+            {post.pollOptions.map((opt: any, idx: number) => {
+              const voteCount = opt.votes || 0;
+              const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+              const isVoting = votingId === `${post.id}-${idx}`;
+
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleVote(post.id, idx)}
+                  disabled={isVoting}
+                  className="mb-2 relative h-10 justify-center rounded-xl overflow-hidden border border-slate-200 bg-white"
+                >
+                  {/* Progress Bar Background */}
+                  <View
+                    className="absolute left-0 top-0 bottom-0 bg-indigo-100"
+                    style={{ width: `${percentage}%` }}
+                  />
+                  <View className="flex-row items-center justify-between px-3 relative z-10">
+                    <Text className="font-bold text-slate-800 text-sm">
+                      {opt.text}
+                    </Text>
+                    <View className="flex-row items-center gap-2">
+                      {isVoting && <ActivityIndicator size="small" color="#4f46e5" />}
+                      <Text className="font-bold text-indigo-700 text-xs">
+                        {percentage}%
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      </SurfaceCard>
+    );
+  };
+
   return (
     <View className="flex-1 bg-slate-50">
       {/* Header */}
-      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100">
-        <View className="flex-row items-center justify-between">
+      <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-200 shadow-sm">
+        <View className="flex-row items-center justify-between mb-2">
           <View>
-            <Text className="text-xl font-black text-slate-900">Posts & Polls</Text>
-            <Text className="text-slate-500 text-xs mt-0.5">
-              Announcements, news & community votes
+            <Text className="text-2xl font-black text-slate-900 tracking-tight">Posts & Polls</Text>
+            <Text className="text-slate-500 font-medium text-xs mt-0.5">
+              Broadcast announcements to your organization
             </Text>
           </View>
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => setCreateModalOpen(true)}
-              className="p-2.5 bg-indigo-600 rounded-xl active:bg-indigo-700 flex-row items-center gap-1"
-            >
-              <Plus color="#ffffff" size={16} />
-              <Text className="text-white font-bold text-xs">New Post</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => refetch()}
-              className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
-            >
-              <RefreshCw color="#64748b" size={18} />
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
+          >
+            <RefreshCw size={16} color="#64748b" />
+          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          onPress={() => setCreateModalOpen(true)}
+          className="mt-2 bg-indigo-600 rounded-xl py-3 flex-row justify-center items-center gap-2 shadow-md shadow-indigo-500/20 active:bg-indigo-700"
+        >
+          <Plus size={16} color="#ffffff" />
+          <Text className="text-white font-extrabold text-sm">Create New Post</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Feed List */}
-      <ScrollView className="flex-1 px-4 pt-3">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
         {isLoading ? (
           <View className="py-16 items-center">
             <ActivityIndicator color="#4f46e5" size="large" />
             <Text className="text-slate-400 text-xs font-medium mt-2">Loading feed...</Text>
           </View>
         ) : posts.length === 0 ? (
-          <View className="py-16 items-center">
-            <Bell color="#cbd5e1" size={40} />
-            <Text className="text-slate-400 font-bold text-sm mt-2">No posts published yet</Text>
-          </View>
+          <SurfaceCard className="py-16 items-center">
+            <MessageSquare size={48} color="#cbd5e1" />
+            <Text className="text-slate-700 font-bold text-base mt-3">No posts yet</Text>
+            <Text className="text-slate-400 text-xs text-center mt-1">
+              Create an announcement or poll to engage your members.
+            </Text>
+          </SurfaceCard>
         ) : (
-          posts.map((post) => {
-            const isPoll = post.type === 'POLL' || Array.isArray(post.pollOptions);
-            const totalVotes = isPoll
-              ? (post.pollOptions || []).reduce((sum, opt) => sum + (opt.votesCount || opt.votes || 0), 0)
-              : 0;
-
-            return (
-              <View
-                key={post.id}
-                className="bg-white rounded-3xl p-5 mb-4 border border-slate-100 shadow-xs"
-              >
-                {/* Author & Header */}
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center gap-2">
-                    <View className="bg-indigo-50 px-2.5 py-0.5 rounded-lg">
-                      <Text className="text-indigo-700 text-[10px] font-extrabold uppercase">
-                        {post.type || 'NOTIFICATION'}
-                      </Text>
-                    </View>
-                    <Text className="text-slate-400 text-xs">
-                      {new Date(post.createdAt || Date.now()).toLocaleDateString()}
-                    </Text>
-                  </View>
-
-                  <Pressable
-                    onPress={() => handleDelete(post.id)}
-                    className="p-1.5 bg-rose-50 rounded-lg active:bg-rose-100"
-                  >
-                    <Trash2 color="#e11d48" size={14} />
-                  </Pressable>
-                </View>
-
-                {/* Title & Body */}
-                <Text className="text-slate-900 font-extrabold text-base mb-1.5">
-                  {post.title}
-                </Text>
-                <Text className="text-slate-600 text-sm leading-5 mb-3">{post.content}</Text>
-
-                {/* Attachment Image if present */}
-                {post.attachment || post.attachmentUrl ? (
-                  <View className="w-full h-52 rounded-2xl bg-slate-100 overflow-hidden mb-3">
-                    <Image
-                      source={{ uri: post.attachment || post.attachmentUrl }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
-                  </View>
-                ) : null}
-
-                {/* Interactive Poll Rendering */}
-                {isPoll && (
-                  <View className="bg-slate-50 p-4 rounded-2xl mt-1 space-y-2.5">
-                    <View className="flex-row items-center justify-between mb-1">
-                      <Text className="text-slate-700 text-xs font-bold uppercase">
-                        Poll • {totalVotes} Total Votes
-                      </Text>
-                    </View>
-
-                    {(post.pollOptions || []).map((option, idx) => {
-                      const votes = option.votesCount || option.votes || 0;
-                      const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
-                      const isVoted = option.userVoted || option.hasVoted;
-
-                      return (
-                        <Pressable
-                          key={idx}
-                          onPress={() => handleVote(post.id, idx)}
-                          disabled={votingId !== ''}
-                          className="relative bg-white border border-slate-200 rounded-xl p-3 overflow-hidden active:bg-slate-100"
-                        >
-                          {/* Progress bar background fill */}
-                          <View
-                            className="absolute top-0 bottom-0 left-0 bg-indigo-50"
-                            style={{ width: `${percentage}%` }}
-                          />
-
-                          <View className="flex-row items-center justify-between relative z-10">
-                            <View className="flex-row items-center gap-2 flex-1 mr-2">
-                              <View
-                                className={`w-4 h-4 rounded-full border items-center justify-center ${
-                                  isVoted
-                                    ? 'bg-indigo-600 border-indigo-600'
-                                    : 'border-slate-300 bg-white'
-                                }`}
-                              >
-                                {isVoted && <CheckCircle2 color="#fff" size={10} />}
-                              </View>
-                              <Text
-                                className={`text-xs font-semibold ${
-                                  isVoted ? 'text-indigo-900 font-bold' : 'text-slate-800'
-                                }`}
-                              >
-                                {option.text}
-                              </Text>
-                            </View>
-
-                            <Text className="text-slate-500 font-bold text-xs">
-                              {percentage}% ({votes})
-                            </Text>
-                          </View>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })
+          posts.map(renderPostContent)
         )}
-        <View className="h-10" />
       </ScrollView>
 
-      {/* Create Post Modal */}
-      <Modal visible={createModalOpen} transparent animationType="slide">
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 max-h-[90%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-black text-slate-900">Create New Post</Text>
-              <Pressable onPress={() => setCreateModalOpen(false)}>
-                <Text className="text-slate-400 font-bold text-sm">Cancel</Text>
-              </Pressable>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Post Type Selector */}
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-2">Post Type</Text>
-              <View className="flex-row gap-2 mb-4">
-                {POST_TYPES.map((t) => (
-                  <Pressable
-                    key={t.value}
-                    onPress={() => setPostType(t.value)}
-                    className={`flex-1 py-2 rounded-xl items-center border ${
-                      postType === t.value
-                        ? 'bg-indigo-50 border-indigo-500'
-                        : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <Text
-                      className={`text-[11px] font-bold ${
-                        postType === t.value ? 'text-indigo-600' : 'text-slate-600'
+      {/* Create Post ActionModal */}
+      {createModalOpen && (
+        <ActionModal
+          visible={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          title="Create New Post"
+          subtitle="Publish content to your organization feed"
+        >
+          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[600px]">
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Post Type</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {POST_TYPES.map((pt) => {
+                  const isSelected = postType === pt.value;
+                  return (
+                    <TouchableOpacity
+                      key={pt.value}
+                      onPress={() => setPostType(pt.value)}
+                      className={`px-3 py-2 rounded-xl border ${
+                        isSelected
+                          ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                          : 'bg-white border-slate-200'
                       }`}
                     >
-                      {t.label}
-                    </Text>
-                  </Pressable>
-                ))}
+                      <Text
+                        className={`text-xs font-bold ${
+                          isSelected ? 'text-white' : 'text-slate-700'
+                        }`}
+                      >
+                        {pt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
+            </View>
 
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Title</Text>
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Announcement / Poll title..."
-                className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-3"
-              />
+            <TextInput
+              label="Post Title"
+              required
+              placeholder="Enter a catchy title"
+              value={title}
+              onChangeText={setTitle}
+            />
 
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Content / Message</Text>
-              <TextInput
-                value={content}
-                onChangeText={setContent}
-                placeholder="Write your post content here..."
-                multiline
-                numberOfLines={3}
-                className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-4 h-24"
-                textAlignVertical="top"
-              />
+            <TextInput
+              label="Content Message"
+              required
+              placeholder="What do you want to share?"
+              value={content}
+              onChangeText={setContent}
+              multiline
+            />
 
-              {/* Dynamic Poll Options if Poll */}
-              {postType === 'POLL' && (
-                <View className="bg-slate-50 p-4 rounded-2xl mb-4">
-                  <Text className="text-slate-900 font-bold text-xs uppercase mb-2">
-                    Poll Options
-                  </Text>
-                  {pollOptions.map((opt, idx) => (
-                    <TextInput
-                      key={idx}
-                      value={opt}
-                      onChangeText={(t) => handlePollOptionChange(t, idx)}
-                      placeholder={`Option ${idx + 1}...`}
-                      className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-medium mb-2 text-xs"
-                    />
-                  ))}
-                  {pollOptions.length < 6 && (
-                    <Pressable
-                      onPress={handleAddPollOption}
-                      className="py-2 items-center bg-indigo-50 rounded-xl mt-1"
-                    >
-                      <Text className="text-indigo-600 font-bold text-xs">+ Add Another Option</Text>
-                    </Pressable>
-                  )}
-                </View>
-              )}
+            {postType === 'POLL' && (
+              <SurfaceCard variant="flat" className="p-4 mb-4 bg-slate-50 border border-slate-200">
+                <Text className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-widest">
+                  Poll Options
+                </Text>
+                {pollOptions.map((opt, idx) => (
+                  <View key={idx} className="flex-row items-center gap-2 mb-2">
+                    <View className="flex-1">
+                      <TextInput
+                        placeholder={`Option ${idx + 1}`}
+                        value={opt}
+                        onChangeText={(t) => handlePollOptionChange(t, idx)}
+                      />
+                    </View>
+                    {pollOptions.length > 2 && (
+                      <TouchableOpacity
+                        onPress={() => handleRemovePollOption(idx)}
+                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 items-center justify-center -mt-4"
+                      >
+                        <X size={16} color="#ef4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                {pollOptions.length < 6 && (
+                  <TouchableOpacity
+                    onPress={handleAddPollOption}
+                    className="flex-row items-center gap-2 py-2"
+                  >
+                    <Plus size={14} color="#4f46e5" />
+                    <Text className="text-indigo-600 font-bold text-xs">Add Option</Text>
+                  </TouchableOpacity>
+                )}
+              </SurfaceCard>
+            )}
 
-              {/* Attachment Picker */}
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-1">
-                Image Attachment (Optional)
-              </Text>
-              <Pressable
+            <View className="mb-5">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Attachment (Optional)</Text>
+              <TouchableOpacity
                 onPress={handlePickAttachment}
-                className="bg-slate-100 border border-dashed border-slate-300 rounded-xl p-4 items-center justify-center mb-6"
+                className="bg-slate-50 border border-slate-200 border-dashed py-6 rounded-2xl items-center justify-center overflow-hidden"
               >
                 {attachmentBase64 ? (
-                  <View className="items-center">
-                    <CheckCircle2 color="#059669" size={24} />
-                    <Text className="text-emerald-700 font-bold text-xs mt-1">Image Attached</Text>
-                  </View>
-                ) : (
-                  <View className="items-center">
-                    <ImageIcon color="#94a3b8" size={24} />
-                    <Text className="text-slate-500 font-bold text-xs mt-1">
-                      Tap to select image
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
+                  <Image
+                    source={{ uri: attachmentBase64 }}
+                    style={{ width: '100%', height: 120, position: 'absolute' }}
+                    resizeMode="cover"
+                  />
+                ) : null}
+                <View className={`items-center ${attachmentBase64 ? 'bg-black/50 p-2 rounded-xl' : ''}`}>
+                  <ImageIcon size={24} color={attachmentBase64 ? '#fff' : '#94a3b8'} className="mb-2" />
+                  <Text className={`text-xs font-bold ${attachmentBase64 ? 'text-white' : 'text-slate-500'}`}>
+                    {attachmentBase64 ? 'Tap to change image' : 'Tap to select an image'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
-              <Pressable
-                onPress={handleCreatePost}
-                disabled={submitting}
-                className="bg-indigo-600 py-4 rounded-2xl items-center justify-center active:bg-indigo-700 mb-6"
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-white font-extrabold text-base">Publish Post</Text>
-                )}
-              </Pressable>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+            <Button
+              onPress={handleCreatePost}
+              isLoading={isSubmitting}
+              size="lg"
+              className="bg-indigo-600 rounded-2xl shadow-md shadow-indigo-500/20 mb-4"
+            >
+              <View className="flex-row items-center justify-center gap-2">
+                <Text className="text-white font-extrabold text-sm">Publish to Organization</Text>
+              </View>
+            </Button>
+          </ScrollView>
+        </ActionModal>
+      )}
     </View>
   );
 }

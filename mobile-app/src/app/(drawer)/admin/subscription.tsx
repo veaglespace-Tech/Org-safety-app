@@ -20,7 +20,7 @@ import {
 import { useGetOrgSubscriptionQuery } from '@/services/api/orgApi';
 
 export default function SubscriptionScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const {
     data: subData,

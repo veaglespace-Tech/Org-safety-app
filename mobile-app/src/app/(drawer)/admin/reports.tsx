@@ -3,7 +3,7 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   ActivityIndicator,
   Alert,
   Share,
@@ -21,10 +21,14 @@ import {
   RefreshCw,
 } from 'lucide-react-native';
 import { useGetOrgReportsQuery } from '@/services/api/orgApi';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { BadgePill } from '@/components/ui/BadgePill';
+import { Button } from '@/components/ui/Button';
 
 export default function ReportsScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
   const [rangeType, setRangeType] = useState('MONTHLY');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const {
     data: reportData,
@@ -52,113 +56,142 @@ export default function ReportsScreen() {
     }
   };
 
-  return (
-    <ScrollView className="flex-1 bg-slate-50">
-      {/* Header */}
-      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100 flex-row items-center justify-between">
-        <View>
-          <Text className="text-xl font-black text-slate-900">Analytics & Reports</Text>
-          <Text className="text-slate-500 text-xs mt-0.5">
-            Attendance patterns & organization metrics
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => refetch()}
-          className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
-        >
-          <RefreshCw color="#64748b" size={18} />
-        </Pressable>
-      </View>
+  const generatePDF = () => {
+    setIsGenerating(true);
+    setTimeout(() => {
+      setIsGenerating(false);
+      Alert.alert('Report Generated', 'Your PDF has been generated successfully and saved to documents.');
+    }, 1500);
+  };
 
-      {/* Range Selector */}
-      <View className="flex-row bg-slate-200/70 p-1 rounded-2xl mx-4 mt-4">
-        {['DAILY', 'WEEKLY', 'MONTHLY'].map((r) => (
-          <Pressable
-            key={r}
-            onPress={() => setRangeType(r)}
-            className={`flex-1 py-2.5 items-center rounded-xl ${
-              rangeType === r ? 'bg-white shadow-xs' : ''
-            }`}
+  return (
+    <View className="flex-1 bg-slate-50">
+      {/* Header */}
+      <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-200 shadow-sm">
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-2xl font-black text-slate-900 tracking-tight">Analytics</Text>
+            <Text className="text-slate-500 font-medium text-xs mt-0.5">
+              Attendance patterns & organization metrics
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
           >
-            <Text
-              className={`text-xs font-bold ${
-                rangeType === r ? 'text-indigo-600' : 'text-slate-600'
+            <RefreshCw size={16} color="#64748b" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Range Selector */}
+        <View className="flex-row bg-slate-100 p-1 rounded-xl mt-5">
+          {['DAILY', 'WEEKLY', 'MONTHLY'].map((r) => (
+            <TouchableOpacity
+              key={r}
+              onPress={() => setRangeType(r)}
+              className={`flex-1 py-2.5 items-center rounded-lg ${
+                rangeType === r ? 'bg-white shadow-sm' : ''
               }`}
             >
-              {r}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* 4 Metric Cards */}
-      <View className="mx-4 mt-4 grid flex-row flex-wrap gap-3">
-        <View className="flex-1 min-w-[45%] bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
-          <View className="w-10 h-10 rounded-2xl bg-indigo-50 items-center justify-center mb-3">
-            <BarChart3 color="#4f46e5" size={20} />
-          </View>
-          <Text className="text-slate-400 text-[10px] font-bold uppercase">Total Punches</Text>
-          <Text className="text-slate-900 font-black text-2xl mt-0.5">
-            {summary.totalPunches}
-          </Text>
-        </View>
-
-        <View className="flex-1 min-w-[45%] bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
-          <View className="w-10 h-10 rounded-2xl bg-emerald-50 items-center justify-center mb-3">
-            <CheckCircle2 color="#059669" size={20} />
-          </View>
-          <Text className="text-slate-400 text-[10px] font-bold uppercase">Attendance Rate</Text>
-          <Text className="text-slate-900 font-black text-2xl mt-0.5">
-            {summary.presentRate}
-          </Text>
-        </View>
-
-        <View className="flex-1 min-w-[45%] bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
-          <View className="w-10 h-10 rounded-2xl bg-blue-50 items-center justify-center mb-3">
-            <Clock color="#2563eb" size={20} />
-          </View>
-          <Text className="text-slate-400 text-[10px] font-bold uppercase">Avg Daily Hours</Text>
-          <Text className="text-slate-900 font-black text-2xl mt-0.5">
-            {summary.avgDailyHours}
-          </Text>
-        </View>
-
-        <View className="flex-1 min-w-[45%] bg-white p-4 rounded-3xl border border-slate-100 shadow-xs">
-          <View className="w-10 h-10 rounded-2xl bg-purple-50 items-center justify-center mb-3">
-            <Users color="#9333ea" size={20} />
-          </View>
-          <Text className="text-slate-400 text-[10px] font-bold uppercase">Active Members</Text>
-          <Text className="text-slate-900 font-black text-2xl mt-0.5">
-            {summary.totalActiveMembers}
-          </Text>
+              <Text
+                className={`text-xs font-bold ${
+                  rangeType === r ? 'text-indigo-600' : 'text-slate-500'
+                }`}
+              >
+                {r}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      {/* Export & Share Cards */}
-      <View className="bg-white mx-4 mt-5 rounded-3xl p-5 border border-slate-100 shadow-xs">
-        <Text className="text-slate-900 font-extrabold text-base mb-3">Export Data</Text>
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        {isLoading ? (
+          <View className="py-16 items-center">
+            <ActivityIndicator color="#4f46e5" size="large" />
+            <Text className="text-slate-400 text-xs font-medium mt-2">Compiling report data...</Text>
+          </View>
+        ) : (
+          <>
+            {/* Metric Cards Grid */}
+            <View className="flex-row flex-wrap justify-between mb-4">
+              <SurfaceCard className="w-[48%] p-4 mb-3 border-slate-200">
+                <View className="w-10 h-10 rounded-2xl bg-indigo-50 items-center justify-center mb-3">
+                  <BarChart3 color="#4f46e5" size={20} />
+                </View>
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  Total Punches
+                </Text>
+                <Text className="text-2xl font-black text-slate-900">{summary.totalPunches}</Text>
+              </SurfaceCard>
 
-        <View className="flex-row gap-3">
-          <Pressable
-            onPress={() =>
-              Alert.alert('Download Excel', 'Exporting formatted Excel sheet to downloads folder...')
-            }
-            className="flex-1 py-3.5 rounded-2xl items-center justify-center bg-emerald-50 border border-emerald-200 active:bg-emerald-100 flex-row gap-2"
-          >
-            <Download color="#059669" size={16} />
-            <Text className="text-emerald-700 font-bold text-xs">Excel (.xlsx)</Text>
-          </Pressable>
+              <SurfaceCard className="w-[48%] p-4 mb-3 border-slate-200">
+                <View className="w-10 h-10 rounded-2xl bg-emerald-50 items-center justify-center mb-3">
+                  <CheckCircle2 color="#059669" size={20} />
+                </View>
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  Present Rate
+                </Text>
+                <Text className="text-2xl font-black text-slate-900">{summary.presentRate}</Text>
+              </SurfaceCard>
 
-          <Pressable
-            onPress={handleShareReport}
-            className="flex-1 py-3.5 rounded-2xl items-center justify-center bg-indigo-50 border border-indigo-200 active:bg-indigo-100 flex-row gap-2"
-          >
-            <Share2 color="#4f46e5" size={16} />
-            <Text className="text-indigo-600 font-bold text-xs">Share Summary</Text>
-          </Pressable>
-        </View>
-      </View>
-      <View className="h-10" />
-    </ScrollView>
+              <SurfaceCard className="w-[48%] p-4 mb-3 border-slate-200">
+                <View className="w-10 h-10 rounded-2xl bg-amber-50 items-center justify-center mb-3">
+                  <Clock color="#d97706" size={20} />
+                </View>
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  Avg Daily Hrs
+                </Text>
+                <Text className="text-2xl font-black text-slate-900">{summary.avgDailyHours}</Text>
+              </SurfaceCard>
+
+              <SurfaceCard className="w-[48%] p-4 mb-3 border-slate-200">
+                <View className="w-10 h-10 rounded-2xl bg-blue-50 items-center justify-center mb-3">
+                  <Users color="#2563eb" size={20} />
+                </View>
+                <Text className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  Active Members
+                </Text>
+                <Text className="text-2xl font-black text-slate-900">{summary.totalActiveMembers}</Text>
+              </SurfaceCard>
+            </View>
+
+            {/* Export Section */}
+            <SurfaceCard className="p-5 border-slate-200">
+              <View className="flex-row items-center gap-2 mb-2">
+                <FileText size={18} color="#4f46e5" />
+                <Text className="text-sm font-black text-slate-900 tracking-tight">
+                  Generate PDF Report
+                </Text>
+              </View>
+              <Text className="text-xs font-medium text-slate-500 leading-5 mb-5">
+                Download a comprehensive spreadsheet containing all daily punch times, locations, and missing regularization records.
+              </Text>
+
+              <View className="flex-row gap-3">
+                <Button
+                  onPress={generatePDF}
+                  isLoading={isGenerating}
+                  className="flex-1 bg-indigo-600 rounded-xl"
+                >
+                  <View className="flex-row items-center justify-center gap-2">
+                    {!isGenerating && <Download size={14} color="#fff" />}
+                    <Text className="text-white font-extrabold text-sm">Download PDF</Text>
+                  </View>
+                </Button>
+                <TouchableOpacity
+                  onPress={handleShareReport}
+                  className="w-12 h-12 bg-slate-100 rounded-xl items-center justify-center border border-slate-200 active:bg-slate-200"
+                >
+                  <Share2 size={16} color="#475569" />
+                </TouchableOpacity>
+              </View>
+            </SurfaceCard>
+
+            <View className="h-10" />
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }

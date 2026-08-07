@@ -3,9 +3,8 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   ActivityIndicator,
-  RefreshControl,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import {
@@ -13,16 +12,29 @@ import {
   ShieldCheck,
   RefreshCw,
   Clock,
+  Settings2,
 } from 'lucide-react-native';
 import { useGetOrgInstrumentsQuery } from '@/services/api/orgApi';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { BadgePill } from '@/components/ui/BadgePill';
+
+const formatDateTime = (value: any) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
 
 export default function MemberInstrumentsScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const {
     data: instData,
     isLoading,
-    isFetching,
     refetch,
   } = useGetOrgInstrumentsQuery(undefined, { skip: !authUser });
 
@@ -33,10 +45,10 @@ export default function MemberInstrumentsScreen() {
       ? instData.data
       : [];
 
-    const myItems = [];
-    list.forEach((inst) => {
+    const myItems: any[] = [];
+    list.forEach((inst: any) => {
       const assigned = Array.isArray(inst.assignedMembers) ? inst.assignedMembers : [];
-      assigned.forEach((member) => {
+      assigned.forEach((member: any) => {
         const memberId = member.userId || member?.user?.id;
         if (String(memberId) === String(authUser?.id)) {
           myItems.push({
@@ -56,75 +68,103 @@ export default function MemberInstrumentsScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* Header */}
-      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100 flex-row items-center justify-between">
-        <View>
-          <Text className="text-xl font-black text-slate-900">My Assigned Instruments</Text>
-          <Text className="text-slate-500 text-xs mt-0.5">
-            Equipment currently in your custody
-          </Text>
+      <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-200 shadow-sm">
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-2xl font-black text-slate-900 tracking-tight">My Equipment</Text>
+            <Text className="text-slate-500 font-medium text-xs mt-0.5">
+              Instruments currently in your custody
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => refetch()}
+            className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
+          >
+            <RefreshCw size={16} color="#64748b" />
+          </TouchableOpacity>
         </View>
-        <Pressable
-          onPress={() => refetch()}
-          className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
-        >
-          <RefreshCw color="#64748b" size={18} />
-        </Pressable>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4 pt-3"
-        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} />}
-      >
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
         {isLoading ? (
           <View className="py-16 items-center">
             <ActivityIndicator color="#4f46e5" size="large" />
             <Text className="text-slate-400 text-xs font-medium mt-2">Checking assignments...</Text>
           </View>
         ) : assignedToMe.length === 0 ? (
-          <View className="py-16 items-center">
-            <Package color="#cbd5e1" size={40} />
-            <Text className="text-slate-400 font-bold text-sm mt-2">
-              No instruments currently assigned to you
+          <SurfaceCard className="py-16 items-center">
+            <Package color="#cbd5e1" size={48} />
+            <Text className="text-slate-700 font-bold text-base mt-3">No active assignments</Text>
+            <Text className="text-slate-400 text-xs text-center mt-1 px-4">
+              You haven't been assigned any instruments by the admins yet.
             </Text>
-          </View>
+          </SurfaceCard>
         ) : (
-          assignedToMe.map((item, idx) => (
-            <View
-              key={idx}
-              className="bg-white rounded-3xl p-5 mb-4 border border-slate-100 shadow-xs"
-            >
-              <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-slate-900 font-extrabold text-lg flex-1 mr-2" numberOfLines={1}>
-                  {item.instrumentName}
-                </Text>
-                <View className="bg-emerald-50 px-2.5 py-1 rounded-lg">
-                  <Text className="text-emerald-700 text-xs font-bold">
-                    Unit #{item.instrumentNumber || '1'}
-                  </Text>
+          assignedToMe.map((item: any, idx: number) => (
+            <SurfaceCard key={idx} className="mb-4 overflow-hidden border border-slate-200">
+              <View className="p-4 border-b border-slate-100">
+                <View className="flex-row items-start justify-between">
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 items-center justify-center">
+                      <Package size={24} color="#4f46e5" />
+                    </View>
+                    <View>
+                      <Text className="text-base font-black text-slate-900">
+                        {item.instrumentName}
+                      </Text>
+                      <View className="flex-row items-center gap-2 mt-1">
+                        <BadgePill
+                          label={`#${item.instrumentNumber || '1'}`}
+                          variant="primary"
+                          size="sm"
+                        />
+                        <BadgePill
+                          label="ASSIGNED"
+                          variant="active"
+                          size="sm"
+                        />
+                      </View>
+                    </View>
+                  </View>
                 </View>
               </View>
 
-              {item.conditionNotes ? (
-                <Text className="text-slate-500 text-xs mb-3 italic">
-                  Note: "{item.conditionNotes}"
-                </Text>
-              ) : null}
-
-              <View className="flex-row items-center justify-between pt-3 border-t border-slate-100">
-                <View className="flex-row items-center gap-1.5">
-                  <ShieldCheck color="#059669" size={16} />
-                  <Text className="text-slate-700 text-xs font-bold">Assigned to You</Text>
-                </View>
-                {item.assignedAt && (
-                  <Text className="text-slate-400 text-[10px]">
-                    {new Date(item.assignedAt).toLocaleDateString()}
+              <View className="bg-slate-50 p-4">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center gap-2">
+                    <Settings2 size={14} color="#64748b" />
+                    <Text className="text-xs font-bold text-slate-500">Global Condition:</Text>
+                  </View>
+                  <Text className={`text-xs font-extrabold ${item.condition === 'NEEDS_REPAIR' ? 'text-rose-600' : 'text-slate-900'}`}>
+                    {item.condition}
                   </Text>
+                </View>
+
+                {item.conditionNotes ? (
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center gap-2">
+                      <ShieldCheck size={14} color="#64748b" />
+                      <Text className="text-xs font-bold text-slate-500">Assignment Note:</Text>
+                    </View>
+                    <Text className="text-xs font-extrabold text-slate-900">{item.conditionNotes}</Text>
+                  </View>
+                ) : null}
+
+                {item.assignedAt && (
+                  <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-slate-200">
+                    <View className="flex-row items-center gap-2">
+                      <Clock size={14} color="#64748b" />
+                      <Text className="text-xs font-bold text-slate-500">Date Issued:</Text>
+                    </View>
+                    <Text className="text-xs font-extrabold text-slate-900">
+                      {formatDateTime(item.assignedAt)}
+                    </Text>
+                  </View>
                 )}
               </View>
-            </View>
+            </SurfaceCard>
           ))
         )}
-        <View className="h-10" />
       </ScrollView>
     </View>
   );

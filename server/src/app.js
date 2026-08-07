@@ -6,11 +6,8 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow all origins
-    callback(null, true);
-  },
-  credentials: true
+  origin: true, // Allow all origins dynamically (Expo Web, mobile LAN IP, localhost, production)
+  credentials: true,
 }));
 app.use(express.json({ limit: 52428800 }));
 app.use(express.urlencoded({ limit: 52428800, extended: true }));

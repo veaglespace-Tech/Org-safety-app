@@ -36,7 +36,7 @@ import {
 export default function UserDetailScreen() {
   const { userId } = useLocalSearchParams();
   const router = useRouter();
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const { data: usersData, refetch } = useGetOrgUsersQuery(100, { skip: !authUser });
   const [patchUser, { isLoading: isSaving }] = usePatchOrgUserMutation();

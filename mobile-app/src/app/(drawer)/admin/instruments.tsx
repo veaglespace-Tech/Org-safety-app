@@ -3,10 +3,8 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
+  TouchableOpacity,
   Alert,
-  Modal,
-  TextInput,
   ActivityIndicator,
 } from 'react-native';
 import { useSelector } from 'react-redux';
@@ -19,7 +17,11 @@ import {
   RefreshCw,
   Search,
   CheckCircle2,
+  Settings2,
+  Wrench,
+  PackageOpen,
 } from 'lucide-react-native';
+
 import {
   useGetOrgInstrumentsQuery,
   useCreateOrgInstrumentMutation,
@@ -28,25 +30,34 @@ import {
   useDeleteOrgInstrumentMutation,
   useGetOrgUsersQuery,
 } from '@/services/api/orgApi';
+import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { BadgePill } from '@/components/ui/BadgePill';
+import { ActionModal } from '@/components/ui/ActionModal';
+import { Button } from '@/components/ui/Button';
+import { TextInput } from '@/components/ui/TextInput';
+
+const CONDITIONS = [
+  { label: 'Good', value: 'GOOD' },
+  { label: 'Fair', value: 'FAIR' },
+  { label: 'Needs Repair', value: 'NEEDS_REPAIR' },
+];
 
 export default function AdminInstrumentsScreen() {
-  const { user: authUser } = useSelector((state) => state.auth);
+  const { user: authUser } = useSelector((state: any) => state.auth);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [assignModalInstrument, setAssignModalInstrument] = useState(null);
+  const [assignModalInstrument, setAssignModalInstrument] = useState<any>(null);
 
   // Form states
   const [name, setName] = useState('');
   const [totalCount, setTotalCount] = useState('1');
   const [condition, setCondition] = useState('GOOD');
-  const [submitting, setSubmitting] = useState(false);
 
   // Assign form
   const [selectedUserId, setSelectedUserId] = useState('');
   const [instrumentNumber, setInstrumentNumber] = useState('1');
   const [assignNotes, setAssignNotes] = useState('');
-  const [assigning, setAssigning] = useState(false);
 
   const {
     data: instData,
@@ -56,8 +67,8 @@ export default function AdminInstrumentsScreen() {
 
   const { data: usersData } = useGetOrgUsersQuery(200, { skip: !authUser });
 
-  const [createInstrument] = useCreateOrgInstrumentMutation();
-  const [assignInstrument] = useAssignOrgInstrumentMutation();
+  const [createInstrument, { isLoading: isSubmitting }] = useCreateOrgInstrumentMutation();
+  const [assignInstrument, { isLoading: isAssigning }] = useAssignOrgInstrumentMutation();
   const [unassignInstrument] = useUnassignOrgInstrumentMutation();
   const [deleteInstrument] = useDeleteOrgInstrumentMutation();
 
@@ -68,7 +79,7 @@ export default function AdminInstrumentsScreen() {
       ? instData.data
       : [];
     if (!searchTerm.trim()) return list;
-    return list.filter((i) => i.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+    return list.filter((i: any) => i.name?.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [instData, searchTerm]);
 
   const allUsers = usersData?.items || [];
@@ -76,7 +87,7 @@ export default function AdminInstrumentsScreen() {
   const stats = useMemo(() => {
     let total = 0;
     let assigned = 0;
-    instruments.forEach((item) => {
+    instruments.forEach((item: any) => {
       const tot = item.totalCount || item.quantity || 0;
       const ass = Array.isArray(item.assignedMembers)
         ? item.assignedMembers.length
@@ -94,7 +105,6 @@ export default function AdminInstrumentsScreen() {
     }
 
     try {
-      setSubmitting(true);
       await createInstrument({
         name: name.trim(),
         totalCount: parseInt(totalCount, 10) || 1,
@@ -105,11 +115,10 @@ export default function AdminInstrumentsScreen() {
       setCreateModalOpen(false);
       setName('');
       setTotalCount('1');
-      await refetch();
-    } catch (e) {
+      setCondition('GOOD');
+      refetch();
+    } catch (e: any) {
       Alert.alert('Failed', e?.data?.message || 'Could not create instrument.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -120,7 +129,6 @@ export default function AdminInstrumentsScreen() {
     }
 
     try {
-      setAssigning(true);
       await assignInstrument({
         instrumentId: assignModalInstrument.id,
         userId: selectedUserId,
@@ -132,15 +140,14 @@ export default function AdminInstrumentsScreen() {
       setAssignModalInstrument(null);
       setSelectedUserId('');
       setAssignNotes('');
-      await refetch();
-    } catch (e) {
+      setInstrumentNumber('1');
+      refetch();
+    } catch (e: any) {
       Alert.alert('Assign Failed', e?.data?.message || 'Could not assign instrument.');
-    } finally {
-      setAssigning(false);
     }
   };
 
-  const handleUnassign = (instrumentId, userId, memberName) => {
+  const handleUnassign = (instrumentId: string, userId: string, memberName: string) => {
     Alert.alert('Unassign Instrument', `Unassign this instrument from ${memberName}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -149,9 +156,8 @@ export default function AdminInstrumentsScreen() {
         onPress: async () => {
           try {
             await unassignInstrument({ instrumentId, userId }).unwrap();
-            Alert.alert('Unassigned', 'Instrument returned to inventory.');
-            await refetch();
-          } catch (e) {
+            refetch();
+          } catch (e: any) {
             Alert.alert('Error', e?.data?.message || 'Could not unassign instrument.');
           }
         },
@@ -159,7 +165,7 @@ export default function AdminInstrumentsScreen() {
     ]);
   };
 
-  const handleDelete = (id, instName) => {
+  const handleDelete = (id: string, instName: string) => {
     Alert.alert('Delete Instrument', `Permanently delete "${instName}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -168,8 +174,8 @@ export default function AdminInstrumentsScreen() {
         onPress: async () => {
           try {
             await deleteInstrument(id).unwrap();
-            await refetch();
-          } catch (e) {
+            refetch();
+          } catch (e: any) {
             Alert.alert('Error', e?.data?.message || 'Could not delete instrument.');
           }
         },
@@ -180,259 +186,332 @@ export default function AdminInstrumentsScreen() {
   return (
     <View className="flex-1 bg-slate-50">
       {/* Header */}
-      <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100">
-        <View className="flex-row items-center justify-between">
+      <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-200 shadow-sm">
+        <View className="flex-row items-center justify-between mb-4">
           <View>
-            <Text className="text-xl font-black text-slate-900">Instruments Inventory</Text>
-            <Text className="text-slate-500 text-xs mt-0.5">
-              Dhol, Tasha & Cultural equipment tracking
+            <Text className="text-2xl font-black text-slate-900 tracking-tight">Inventory</Text>
+            <Text className="text-slate-500 font-medium text-xs mt-0.5">
+              Manage Dhol, Tasha & Equipment
             </Text>
           </View>
           <View className="flex-row gap-2">
-            <Pressable
+            <TouchableOpacity
               onPress={() => setCreateModalOpen(true)}
-              className="p-2.5 bg-indigo-600 rounded-xl active:bg-indigo-700 flex-row items-center gap-1"
+              className="w-10 h-10 bg-indigo-600 rounded-xl items-center justify-center shadow-md shadow-indigo-500/20 active:bg-indigo-700"
             >
-              <Plus color="#ffffff" size={16} />
-              <Text className="text-white font-bold text-xs">Add Item</Text>
-            </Pressable>
-            <Pressable
+              <Plus color="#ffffff" size={18} />
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => refetch()}
-              className="p-2.5 bg-slate-100 rounded-xl active:bg-slate-200"
+              className="w-10 h-10 bg-slate-100 rounded-xl items-center justify-center active:bg-slate-200"
             >
               <RefreshCw color="#64748b" size={18} />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Stats Row */}
-        <View className="flex-row gap-2 mt-4">
-          <View className="flex-1 bg-slate-100 p-3 rounded-2xl items-center">
-            <Text className="text-slate-400 text-[10px] uppercase font-bold">Total Items</Text>
-            <Text className="text-slate-900 font-extrabold text-base mt-0.5">{stats.total}</Text>
-          </View>
-          <View className="flex-1 bg-indigo-50 p-3 rounded-2xl items-center">
-            <Text className="text-indigo-600 text-[10px] uppercase font-bold">Assigned</Text>
-            <Text className="text-indigo-900 font-extrabold text-base mt-0.5">{stats.assigned}</Text>
-          </View>
-          <View className="flex-1 bg-emerald-50 p-3 rounded-2xl items-center">
-            <Text className="text-emerald-600 text-[10px] uppercase font-bold">Available</Text>
-            <Text className="text-emerald-900 font-extrabold text-base mt-0.5">{stats.available}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Search */}
-        <View className="flex-row items-center bg-slate-100 rounded-2xl px-3.5 py-2 mt-3">
-          <Search color="#94a3b8" size={18} />
+        <View className="flex-row items-center bg-slate-100 px-3 py-2.5 rounded-xl border border-slate-200">
+          <Search color="#94a3b8" size={16} />
           <TextInput
+            placeholder="Search equipment..."
             value={searchTerm}
             onChangeText={setSearchTerm}
-            placeholder="Search instruments..."
-            className="flex-1 ml-2 text-sm text-slate-900 font-medium"
+            className="flex-1 ml-2 text-sm text-slate-800 p-0"
+            style={{ paddingVertical: 0 }}
+            autoCapitalize="none"
           />
         </View>
       </View>
 
-      {/* Inventory List */}
-      <ScrollView className="flex-1 px-4 pt-3">
+      <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Stat Cards */}
+        <View className="flex-row gap-3 mb-5">
+          <SurfaceCard className="flex-1 p-3 items-center">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <Package size={14} color="#64748b" />
+              <Text className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                Total
+              </Text>
+            </View>
+            <Text className="text-2xl font-black text-slate-900">{stats.total}</Text>
+          </SurfaceCard>
+          
+          <SurfaceCard className="flex-1 p-3 items-center border-emerald-100">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <PackageOpen size={14} color="#059669" />
+              <Text className="text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                Available
+              </Text>
+            </View>
+            <Text className="text-2xl font-black text-emerald-600">{stats.available}</Text>
+          </SurfaceCard>
+
+          <SurfaceCard className="flex-1 p-3 items-center border-indigo-100">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <UserCheck size={14} color="#4f46e5" />
+              <Text className="text-[10px] font-black uppercase tracking-wider text-indigo-600">
+                Assigned
+              </Text>
+            </View>
+            <Text className="text-2xl font-black text-indigo-600">{stats.assigned}</Text>
+          </SurfaceCard>
+        </View>
+
         {isLoading ? (
           <View className="py-16 items-center">
             <ActivityIndicator color="#4f46e5" size="large" />
             <Text className="text-slate-400 text-xs font-medium mt-2">Loading inventory...</Text>
           </View>
         ) : instruments.length === 0 ? (
-          <View className="py-16 items-center">
-            <Package color="#cbd5e1" size={40} />
-            <Text className="text-slate-400 font-bold text-sm mt-2">No instruments found</Text>
-          </View>
+          <SurfaceCard className="py-16 items-center">
+            <Package size={48} color="#cbd5e1" />
+            <Text className="text-slate-700 font-bold text-base mt-3">Inventory Empty</Text>
+            <Text className="text-slate-400 text-xs text-center mt-1 px-4">
+              Click the plus icon to add instruments.
+            </Text>
+          </SurfaceCard>
         ) : (
-          instruments.map((inst) => {
-            const assignedMembers = Array.isArray(inst.assignedMembers) ? inst.assignedMembers : [];
-            const available = Math.max(0, (inst.totalCount || 1) - assignedMembers.length);
+          instruments.map((item: any) => {
+            const tot = item.totalCount || item.quantity || 0;
+            const assignedList = Array.isArray(item.assignedMembers) ? item.assignedMembers : [];
+            const assCount = assignedList.length;
+            const avail = Math.max(0, tot - assCount);
 
             return (
-              <View
-                key={inst.id}
-                className="bg-white rounded-3xl p-5 mb-4 border border-slate-100 shadow-xs"
-              >
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-1 mr-2">
-                    <Text className="text-slate-900 font-extrabold text-lg" numberOfLines={1}>
-                      {inst.name}
-                    </Text>
-                    <Text className="text-slate-400 text-xs mt-0.5">
-                      Total: {inst.totalCount || 1} • Available: {available}
-                    </Text>
+              <SurfaceCard key={item.id} className="mb-4 overflow-hidden border border-slate-200">
+                <View className="p-4 border-b border-slate-100">
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 items-center justify-center">
+                        <Package size={24} color="#4f46e5" />
+                      </View>
+                      <View>
+                        <Text className="text-base font-black text-slate-900">{item.name}</Text>
+                        <View className="flex-row gap-2 mt-1">
+                          <BadgePill
+                            label={item.condition || 'GOOD'}
+                            variant={item.condition === 'NEEDS_REPAIR' ? 'error' : 'active'}
+                            size="sm"
+                          />
+                        </View>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(item.id, item.name)}
+                      className="w-8 h-8 rounded-full bg-red-50 items-center justify-center border border-red-100 active:bg-red-100"
+                    >
+                      <Trash2 size={14} color="#dc2626" />
+                    </TouchableOpacity>
                   </View>
 
-                  <View className="flex-row gap-2 items-center">
-                    <Pressable
-                      onPress={() => setAssignModalInstrument(inst)}
-                      className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl flex-row items-center gap-1 active:bg-indigo-100"
-                    >
-                      <UserCheck color="#4f46e5" size={14} />
-                      <Text className="text-indigo-600 font-bold text-xs">Assign</Text>
-                    </Pressable>
-
-                    <Pressable
-                      onPress={() => handleDelete(inst.id, inst.name)}
-                      className="p-2 bg-rose-50 rounded-xl active:bg-rose-100"
-                    >
-                      <Trash2 color="#e11d48" size={14} />
-                    </Pressable>
+                  <View className="flex-row mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <View className="flex-1 items-center border-r border-slate-200">
+                      <Text className="text-xs font-bold text-slate-500 mb-0.5">Total</Text>
+                      <Text className="font-black text-slate-900">{tot}</Text>
+                    </View>
+                    <View className="flex-1 items-center border-r border-slate-200">
+                      <Text className="text-xs font-bold text-emerald-600 mb-0.5">Available</Text>
+                      <Text className="font-black text-emerald-700">{avail}</Text>
+                    </View>
+                    <View className="flex-1 items-center">
+                      <Text className="text-xs font-bold text-indigo-600 mb-0.5">Assigned</Text>
+                      <Text className="font-black text-indigo-700">{assCount}</Text>
+                    </View>
                   </View>
                 </View>
 
-                {/* Assigned Members Chips */}
-                {assignedMembers.length > 0 && (
-                  <View className="mt-3 pt-3 border-t border-slate-100">
-                    <Text className="text-slate-400 text-[10px] uppercase font-bold mb-2">
-                      Currently Assigned ({assignedMembers.length})
+                {/* Assignments List */}
+                {assignedList.length > 0 && (
+                  <View className="bg-slate-50 p-4">
+                    <Text className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                      Active Assignments
                     </Text>
-                    {assignedMembers.map((member, idx) => {
-                      const memberName = member.userName || member?.user?.name || 'Member';
-                      const memberId = member.userId || member?.user?.id;
-                      return (
-                        <View
-                          key={idx}
-                          className="flex-row items-center justify-between bg-slate-50 p-2.5 rounded-xl mb-1.5"
-                        >
-                          <View>
-                            <Text className="text-slate-800 font-bold text-xs">{memberName}</Text>
-                            {member.instrumentNumber && (
-                              <Text className="text-slate-400 text-[10px]">
-                                Unit #{member.instrumentNumber}
-                              </Text>
-                            )}
+                    {assignedList.map((am: any, idx: number) => (
+                      <View
+                        key={idx}
+                        className="flex-row items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 mb-2"
+                      >
+                        <View className="flex-row items-center gap-2 flex-1">
+                          <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center">
+                            <Text className="text-[10px] font-bold text-blue-700">
+                              #{am.instrumentNumber || idx + 1}
+                            </Text>
                           </View>
-                          <Pressable
-                            onPress={() => handleUnassign(inst.id, memberId, memberName)}
-                            className="p-1 bg-rose-100 rounded-lg active:bg-rose-200"
-                          >
-                            <UserX color="#e11d48" size={14} />
-                          </Pressable>
+                          <View>
+                            <Text className="text-xs font-bold text-slate-800">
+                              {am.user?.name || 'Member'}
+                            </Text>
+                            {am.conditionNotes ? (
+                              <Text className="text-[10px] text-slate-500" numberOfLines={1}>
+                                Note: {am.conditionNotes}
+                              </Text>
+                            ) : null}
+                          </View>
                         </View>
-                      );
-                    })}
+                        <TouchableOpacity
+                          onPress={() => handleUnassign(item.id, am.user?.id, am.user?.name)}
+                          className="bg-red-50 p-1.5 rounded-lg active:bg-red-100"
+                        >
+                          <UserX size={14} color="#dc2626" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
                   </View>
                 )}
-              </View>
+
+                {avail > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setAssignModalInstrument(item)}
+                    className="flex-row items-center justify-center gap-2 bg-indigo-50 py-3 rounded-b-2xl border-t border-indigo-100 active:bg-indigo-100"
+                  >
+                    <UserCheck size={14} color="#4f46e5" />
+                    <Text className="text-indigo-700 font-extrabold text-xs">Assign to Member</Text>
+                  </TouchableOpacity>
+                )}
+              </SurfaceCard>
             );
           })
         )}
-        <View className="h-10" />
       </ScrollView>
 
       {/* Create Modal */}
-      <Modal visible={createModalOpen} transparent animationType="slide">
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white rounded-t-3xl p-6">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-black text-slate-900">Add Instrument</Text>
-              <Pressable onPress={() => setCreateModalOpen(false)}>
-                <Text className="text-slate-400 font-bold text-sm">Cancel</Text>
-              </Pressable>
-            </View>
-
-            <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Instrument Name</Text>
+      {createModalOpen && (
+        <ActionModal
+          visible={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          title="Add Instrument"
+          subtitle="Register new equipment in inventory"
+        >
+          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[500px]">
             <TextInput
+              label="Instrument Name"
+              required
+              placeholder="e.g. Dhol, Tasha"
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Puneri Dhol #1"
-              className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-3"
             />
 
-            <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Total Quantity</Text>
             <TextInput
+              label="Total Quantity"
+              required
+              placeholder="e.g. 5"
               value={totalCount}
               onChangeText={setTotalCount}
               keyboardType="numeric"
-              className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-6"
             />
 
-            <Pressable
-              onPress={handleCreate}
-              disabled={submitting}
-              className="bg-indigo-600 py-4 rounded-2xl items-center justify-center active:bg-indigo-700 mb-6"
-            >
-              {submitting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text className="text-white font-extrabold text-base">Add to Inventory</Text>
-              )}
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Assign Modal */}
-      <Modal visible={Boolean(assignModalInstrument)} transparent animationType="slide">
-        <View className="flex-1 bg-black/60 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 max-h-[90%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="text-lg font-black text-slate-900">Assign Instrument</Text>
-                <Text className="text-slate-500 text-xs">{assignModalInstrument?.name}</Text>
-              </View>
-              <Pressable onPress={() => setAssignModalInstrument(null)}>
-                <Text className="text-slate-400 font-bold text-sm">Cancel</Text>
-              </Pressable>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-2">Select Member</Text>
-              <View className="bg-slate-50 p-2 rounded-2xl mb-4 max-h-48">
-                <ScrollView nestedScrollEnabled>
-                  {allUsers.map((u) => {
-                    const isSelected = selectedUserId === u.id;
-                    return (
-                      <Pressable
-                        key={u.id}
-                        onPress={() => setSelectedUserId(u.id)}
-                        className={`flex-row items-center justify-between p-2.5 rounded-xl mb-1 ${
-                          isSelected ? 'bg-indigo-100' : 'bg-white'
+            <View className="mb-5">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Condition</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {CONDITIONS.map((c) => {
+                  const isSelected = condition === c.value;
+                  return (
+                    <TouchableOpacity
+                      key={c.value}
+                      onPress={() => setCondition(c.value)}
+                      className={`px-3 py-2 rounded-xl border ${
+                        isSelected
+                          ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-xs font-bold ${
+                          isSelected ? 'text-white' : 'text-slate-700'
                         }`}
                       >
-                        <Text className="text-slate-800 text-xs font-bold">{u.name}</Text>
-                        {isSelected && <CheckCircle2 color="#4f46e5" size={16} />}
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                        {c.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
+            </View>
 
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Unit / Serial Number</Text>
-              <TextInput
-                value={instrumentNumber}
-                onChangeText={setInstrumentNumber}
-                placeholder="e.g. 1"
-                keyboardType="numeric"
-                className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-3"
-              />
+            <Button
+              onPress={handleCreate}
+              isLoading={isSubmitting}
+              size="lg"
+              className="bg-indigo-600 rounded-2xl shadow-md shadow-indigo-500/20 mb-4"
+            >
+              <Text className="text-white font-extrabold text-sm text-center">Add to Inventory</Text>
+            </Button>
+          </ScrollView>
+        </ActionModal>
+      )}
 
-              <Text className="text-slate-700 text-xs font-bold uppercase mb-1">Condition Notes (Optional)</Text>
-              <TextInput
-                value={assignNotes}
-                onChangeText={setAssignNotes}
-                placeholder="e.g. Minor scratches, freshly tuned..."
-                className="bg-slate-100 rounded-xl px-4 py-3 text-slate-900 font-medium mb-6"
-              />
+      {/* Assign Modal */}
+      {assignModalInstrument && (
+        <ActionModal
+          visible={Boolean(assignModalInstrument)}
+          onClose={() => setAssignModalInstrument(null)}
+          title="Assign Instrument"
+          subtitle={`Assigning ${assignModalInstrument.name}`}
+        >
+          <ScrollView showsVerticalScrollIndicator={false} className="max-h-[500px]">
+            <View className="mb-4">
+              <Text className="text-xs font-bold text-slate-700 mb-2 ml-1">Select Member</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                {allUsers.map((u: any) => {
+                  const isSelected = selectedUserId === u.id;
+                  return (
+                    <TouchableOpacity
+                      key={u.id}
+                      onPress={() => setSelectedUserId(u.id)}
+                      className={`mr-2 px-4 py-2.5 rounded-xl border ${
+                        isSelected
+                          ? 'bg-indigo-600 border-indigo-600 shadow-sm'
+                          : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <Text
+                        className={`text-sm font-bold ${
+                          isSelected ? 'text-white' : 'text-slate-700'
+                        }`}
+                      >
+                        {u.name}
+                      </Text>
+                      <Text
+                        className={`text-[10px] ${
+                          isSelected ? 'text-indigo-200' : 'text-slate-400'
+                        }`}
+                      >
+                        {u.role || 'MEMBER'}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
 
-              <Pressable
-                onPress={handleAssign}
-                disabled={assigning}
-                className="bg-indigo-600 py-4 rounded-2xl items-center justify-center active:bg-indigo-700 mb-6"
-              >
-                {assigning ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text className="text-white font-extrabold text-base">Confirm Assignment</Text>
-                )}
-              </Pressable>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+            <TextInput
+              label="Instrument Number / Asset ID (Optional)"
+              placeholder="e.g. 1"
+              value={instrumentNumber}
+              onChangeText={setInstrumentNumber}
+              keyboardType="numeric"
+            />
+
+            <TextInput
+              label="Condition Notes (Optional)"
+              placeholder="e.g. Scratched rim"
+              value={assignNotes}
+              onChangeText={setAssignNotes}
+              multiline
+            />
+
+            <Button
+              onPress={handleAssign}
+              isLoading={isAssigning}
+              size="lg"
+              className="bg-indigo-600 rounded-2xl shadow-md shadow-indigo-500/20 mb-4 mt-2"
+            >
+              <Text className="text-white font-extrabold text-sm text-center">Assign to Member</Text>
+            </Button>
+          </ScrollView>
+        </ActionModal>
+      )}
     </View>
   );
 }
