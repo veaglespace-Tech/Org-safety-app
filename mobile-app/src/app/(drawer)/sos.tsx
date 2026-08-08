@@ -329,7 +329,7 @@ ${locUrl || 'Location coordinates not available'}
   return (
     <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950 w-full"
-      contentContainerStyle={{ paddingBottom: 60 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Top 3 Header Cards Row */}
@@ -798,7 +798,7 @@ ${locUrl || 'Location coordinates not available'}
       </View>
 
       {/* 6. Footer */}
-      <View className="px-3.5 sm:px-4 mt-4">
+      <View className="px-3.5 sm:px-4 mt-auto">
         <AppFooter />
       </View>
     </ScrollView>

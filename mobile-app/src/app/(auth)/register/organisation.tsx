@@ -35,6 +35,8 @@ import { Button } from '@/components/ui/Button';
 import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { useAppTheme } from '@/context/ThemeContext';
 import { useRegisterOrganizationMutation } from '@/services/api/authApi';
 import { useGetPlansQuery } from '@/services/api/planApi';
 import { setSession } from '@/store/slices/authSlice';
@@ -62,17 +64,17 @@ const orgSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, 'Organization name is required')
-    .max(100, 'Organization name is too long')
+    .min(2, 'Organization name must be at least 2 characters')
+    .max(150, 'Organization name is too long')
     .regex(
       ORGANIZATION_NAME_REGEX,
-      'Organization name can only include letters, numbers, spaces, and . & ( ) - characters'
+      'Organization name can only contain letters, numbers, spaces, and standard punctuation'
     ),
   email: z
     .string()
     .trim()
-    .min(1, 'Business email is required')
-    .email('Invalid business email address')
+    .min(1, 'Email is required')
+    .email('Invalid email address')
     .refine(isNotCommonEmailTypo, {
       message: 'Did you mean .com or .co.in? Please enter a valid email address.',
     }),
@@ -80,38 +82,37 @@ const orgSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(1, 'Business phone is required')
     .refine(
-      (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-      'Business phone number is too short'
-    )
-    .refine(
-      (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-      'Business phone number is too long'
+      (val) => {
+        const digits = toDigitsOnly(val);
+        return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
+      },
+      {
+        message: `Phone number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
+      }
     ),
-  city: z
-    .string()
-    .trim()
-    .min(1, 'City is required')
-    .max(80, 'City is too long')
-    .regex(PLACE_NAME_REGEX, 'Enter a valid city'),
-  state: z
-    .string()
-    .trim()
-    .min(1, 'State is required')
-    .max(80, 'State is too long')
-    .regex(PLACE_NAME_REGEX, 'Enter a valid state'),
-  country: z
-    .string()
-    .trim()
-    .min(1, 'Country is required')
-    .max(80, 'Country is too long')
-    .regex(PLACE_NAME_REGEX, 'Enter a valid country'),
   address: z
     .string()
     .trim()
-    .min(5, 'Address must be at least 5 characters')
-    .max(180, 'Address is too long'),
+    .min(3, 'Address is required')
+    .max(250, 'Address is too long'),
+  city: z
+    .string()
+    .trim()
+    .min(2, 'City is required')
+    .max(80, 'City is too long')
+    .regex(PLACE_NAME_REGEX, 'City name contains invalid characters'),
+  state: z
+    .string()
+    .trim()
+    .min(2, 'State is required')
+    .max(80, 'State is too long')
+    .regex(PLACE_NAME_REGEX, 'State name contains invalid characters'),
+  country: z
+    .string()
+    .trim()
+    .min(2, 'Country is required')
+    .max(80, 'Country is too long'),
 });
 
 // --- Step 2 Schema: Admin Details ---
@@ -120,16 +121,16 @@ const adminSchema = z
     name: z
       .string()
       .trim()
-      .min(2, 'Full name is required')
-      .max(120, 'Full name is too long')
+      .min(2, 'Admin full name is required')
+      .max(120, 'Name is too long')
       .regex(
         PERSON_NAME_REGEX,
-        'Full name can only include letters, spaces, apostrophes, dots, or hyphens'
+        'Name can only contain letters, spaces, apostrophes, dots, or hyphens'
       ),
     email: z
       .string()
       .trim()
-      .min(1, 'Admin email is required')
+      .min(1, 'Email is required')
       .email('Invalid email address')
       .refine(isNotCommonEmailTypo, {
         message: 'Did you mean .com or .co.in? Please enter a valid email address.',
@@ -139,54 +140,54 @@ const adminSchema = z
       .string()
       .trim()
       .refine(
-        (value) => toDigitsOnly(value).length >= PHONE_DIGIT_MIN,
-        'Mobile number is too short'
-      )
-      .refine(
-        (value) => toDigitsOnly(value).length <= PHONE_DIGIT_MAX,
-        'Mobile number is too long'
+        (val) => {
+          const digits = toDigitsOnly(val);
+          return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
+        },
+        {
+          message: `Mobile number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
+        }
       ),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
-      .max(64, 'Password must be at most 64 characters')
-      .regex(/[A-Z]/, 'Password must contain at least one capital letter')
-      .regex(/[a-z]/, 'Password must contain at least one small letter')
-      .regex(/\d/, 'Password must contain at least one number')
-      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
-    confirmPassword: z.string(),
-    city: z
-      .string()
-      .trim()
-      .min(1, 'City is required')
-      .max(80, 'City is too long')
-      .regex(PLACE_NAME_REGEX, 'Enter a valid city'),
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { required_error: 'Gender is required' }),
-    bloodGroup: z.string().trim().min(1, 'Blood Group is required'),
+      .max(128, 'Password is too long')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^~_-])[A-Za-z\d@$!%*?&#^~_-]{8,}$/,
+        'Password must contain upper, lower, number and special character'
+      ),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    city: z.string().trim().optional(),
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).default('MALE'),
+    bloodGroup: z
+      .enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'UNKNOWN'])
+      .default('O+'),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords must match',
+    message: 'Passwords do not match',
     path: ['confirmPassword'],
   });
 
 type OrgFormValues = z.infer<typeof orgSchema>;
 type AdminFormValues = z.infer<typeof adminSchema>;
 
-const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GENDERS = [
   { label: 'Male', value: 'MALE' },
   { label: 'Female', value: 'FEMALE' },
   { label: 'Other', value: 'OTHER' },
-] as const;
+];
 
-export default function OrganisationRegister() {
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+export default function RegisterOrganisationScreen() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const searchParams = useLocalSearchParams<{ partnerRef?: string }>();
+  const dispatch = useDispatch();
+  const { isDark } = useAppTheme();
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [selectedPlanId, setSelectedPlanId] = useState<number | string>(1);
+  const [selectedPlanId, setSelectedPlanId] = useState<number>(1);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
 
@@ -250,7 +251,6 @@ export default function OrganisationRegister() {
   // Handle Step 1 Next
   const handleOrgSubmit = async (values: OrgFormValues) => {
     await setRegistrationDraft(REGISTRATION_DRAFT_KEYS.organisation, values);
-    // Autofill admin city from org city if empty
     if (!adminForm.getValues('city')) {
       adminForm.setValue('city', values.city);
     }
@@ -313,37 +313,41 @@ export default function OrganisationRegister() {
         err?.data?.message ||
         err?.error ||
         err?.message ||
-        'Registration failed. Please check all entries.';
+        'Registration failed. Please check your information.';
       setSubmitError(errorMsg);
       if (Platform.OS !== 'web') {
-        Alert.alert('Registration Error', errorMsg);
+        Alert.alert('Registration Failed', errorMsg);
       }
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
         className="px-5 pt-8"
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Back Button */}
-        <TouchableOpacity
-          onPress={() => {
-            if (currentStep > 1) {
-              setCurrentStep((prev) => (prev - 1) as any);
-            } else {
-              router.back();
-            }
-          }}
-          className="flex-row items-center gap-1.5 mb-6 self-start bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm"
-        >
-          <ArrowLeft size={16} color="#2563eb" />
-          <Text className="text-blue-600 font-bold text-sm">
-            {currentStep === 1 ? 'Back to Options' : `Back to Step ${currentStep - 1}`}
-          </Text>
-        </TouchableOpacity>
+        {/* Top Header: Back Button & ThemeToggle */}
+        <View className="flex-row items-center justify-between mb-6">
+          <TouchableOpacity
+            onPress={() => {
+              if (currentStep > 1) {
+                setCurrentStep((prev) => (prev - 1) as any);
+              } else {
+                router.back();
+              }
+            }}
+            className="flex-row items-center gap-1.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+          >
+            <ArrowLeft size={16} color={isDark ? '#38bdf8' : '#2563eb'} />
+            <Text className="text-blue-600 dark:text-sky-400 font-bold text-sm">
+              {currentStep === 1 ? 'Back to Options' : `Back to Step ${currentStep - 1}`}
+            </Text>
+          </TouchableOpacity>
+          <ThemeToggle />
+        </View>
 
         {/* Header Title Section */}
         <View className="mb-4">
@@ -354,14 +358,14 @@ export default function OrganisationRegister() {
             variant="primary"
             className="mb-2.5"
           />
-          <Text className="text-3xl font-black text-slate-900 tracking-tight">
+          <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             {currentStep === 1
               ? 'Register Organization'
               : currentStep === 2
               ? 'Admin Account Credentials'
               : 'Choose Your Plan'}
           </Text>
-          <Text className="text-slate-500 font-medium text-sm mt-1">
+          <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
             {currentStep === 1
               ? 'Enter your band or organization official details'
               : currentStep === 2
@@ -376,7 +380,7 @@ export default function OrganisationRegister() {
             <View
               key={step}
               className={`h-2 flex-1 rounded-full ${
-                currentStep >= step ? 'bg-blue-600' : 'bg-slate-200'
+                currentStep >= step ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
               }`}
             />
           ))}
@@ -384,25 +388,25 @@ export default function OrganisationRegister() {
 
         {/* Error / Success Notifications */}
         {submitError ? (
-          <View className="mb-5 flex-row items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-2xl">
+          <View className="mb-5 flex-row items-center gap-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 p-4 rounded-2xl">
             <AlertCircle size={20} color="#ef4444" />
-            <Text className="text-red-700 font-semibold text-xs flex-1">{submitError}</Text>
+            <Text className="text-red-700 dark:text-red-400 font-semibold text-xs flex-1">{submitError}</Text>
           </View>
         ) : null}
 
         {submitSuccess ? (
-          <View className="mb-5 flex-row items-center gap-3 bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
+          <View className="mb-5 flex-row items-center gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-4 rounded-2xl">
             <CheckCircle2 size={20} color="#10b981" />
-            <Text className="text-emerald-700 font-semibold text-xs flex-1">{submitSuccess}</Text>
+            <Text className="text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex-1">{submitSuccess}</Text>
           </View>
         ) : null}
 
         {/* STEP 1: Organization Details */}
         {currentStep === 1 && (
           <SurfaceCard className="mb-6">
-            <View className="flex-row items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+            <View className="flex-row items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
               <Building2 size={20} color="#2563eb" />
-              <Text className="text-base font-extrabold text-slate-900">Organization Profile</Text>
+              <Text className="text-base font-extrabold text-slate-900 dark:text-white">Organization Profile</Text>
             </View>
 
             <Controller
@@ -544,9 +548,9 @@ export default function OrganisationRegister() {
         {/* STEP 2: Admin Account Credentials */}
         {currentStep === 2 && (
           <SurfaceCard className="mb-6">
-            <View className="flex-row items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+            <View className="flex-row items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
               <User size={20} color="#4f46e5" />
-              <Text className="text-base font-extrabold text-slate-900">Admin Account Info</Text>
+              <Text className="text-base font-extrabold text-slate-900 dark:text-white">Admin Account Info</Text>
             </View>
 
             <Controller
@@ -607,7 +611,7 @@ export default function OrganisationRegister() {
 
             {/* Gender */}
             <View className="mb-4">
-              <Text className="text-sm font-bold text-slate-700 mb-2 ml-1">
+              <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
                 Gender <Text className="text-red-500">*</Text>
               </Text>
               <Controller
@@ -624,12 +628,12 @@ export default function OrganisationRegister() {
                           className={`flex-1 py-3 rounded-2xl items-center border-2 transition-all ${
                             isSelected
                               ? 'bg-blue-600 border-blue-600 shadow-md shadow-blue-500/20'
-                              : 'bg-white border-slate-200'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
                           }`}
                         >
                           <Text
                             className={`font-bold text-xs ${
-                              isSelected ? 'text-white' : 'text-slate-700'
+                              isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200'
                             }`}
                           >
                             {g.label}
@@ -644,7 +648,7 @@ export default function OrganisationRegister() {
 
             {/* Blood Group */}
             <View className="mb-4">
-              <Text className="text-sm font-bold text-slate-700 mb-2 ml-1">
+              <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
                 Blood Group <Text className="text-red-500">*</Text>
               </Text>
               <Controller
@@ -661,12 +665,12 @@ export default function OrganisationRegister() {
                           className={`px-4 py-2.5 rounded-xl border-2 ${
                             isSelected
                               ? 'bg-red-600 border-red-600 shadow-sm'
-                              : 'bg-white border-slate-200'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
                           }`}
                         >
                           <Text
                             className={`font-black text-xs ${
-                              isSelected ? 'text-white' : 'text-slate-700'
+                              isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-200'
                             }`}
                           >
                             {bg}
@@ -755,41 +759,42 @@ export default function OrganisationRegister() {
                   key={plan.id}
                   onPress={() => setSelectedPlanId(plan.id)}
                   activeOpacity={0.9}
+                  className="mb-3"
                 >
                   <SurfaceCard
                     variant={isSelected ? 'glow' : 'default'}
                     className={`border-2 transition-all ${
-                      isSelected ? 'border-blue-600 bg-blue-50/20' : 'border-slate-200'
+                      isSelected ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/30' : 'border-slate-200 dark:border-slate-800'
                     }`}
                   >
                     <View className="flex-row justify-between items-center mb-2">
                       <View className="flex-row items-center gap-2">
                         <Crown size={20} color={isSelected ? '#2563eb' : '#64748b'} />
-                        <Text className="text-lg font-black text-slate-900">{plan.name}</Text>
+                        <Text className="text-lg font-black text-slate-900 dark:text-white">{plan.name}</Text>
                       </View>
                       <View
                         className={`w-6 h-6 rounded-full items-center justify-center border-2 ${
-                          isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
+                          isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                         }`}
                       >
                         {isSelected && <CheckCircle2 size={16} color="#fff" />}
                       </View>
                     </View>
 
-                    <Text className="text-slate-600 font-medium text-xs mb-3">
+                    <Text className="text-slate-600 dark:text-slate-300 font-medium text-xs mb-3">
                       {plan.description}
                     </Text>
 
                     <View className="flex-row items-baseline gap-1">
-                      <Text className="text-2xl font-black text-slate-900">
+                      <Text className="text-2xl font-black text-slate-900 dark:text-white">
                         ₹{plan.price || 0}
                       </Text>
-                      <Text className="text-slate-500 font-bold text-xs">/ year</Text>
+                      <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs">/ year</Text>
                     </View>
 
-                    <View className="mt-3 pt-3 border-t border-slate-100 flex-row items-center gap-2">
-                      <Zap size={14} color="#059669" />
-                      <Text className="text-xs font-bold text-emerald-800">
+                    <View className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex-row items-center gap-2">
+                      <Zap size={14} color="#10b981" />
+                      <Text className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                         Up to {plan.memberLimit || 50} active members
                       </Text>
                     </View>
@@ -800,27 +805,27 @@ export default function OrganisationRegister() {
 
             {/* Summary Review Card */}
             <SurfaceCard variant="flat" className="mt-4">
-              <View className="flex-row items-center gap-2 mb-3 pb-2 border-b border-slate-200">
+              <View className="flex-row items-center gap-2 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
                 <ShieldCheck size={18} color="#4f46e5" />
-                <Text className="text-sm font-extrabold text-slate-900">Registration Summary</Text>
+                <Text className="text-sm font-extrabold text-slate-900 dark:text-white">Registration Summary</Text>
               </View>
 
               <View className="space-y-1.5">
                 <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500">Organization:</Text>
-                  <Text className="text-xs font-bold text-slate-900">
+                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Organization:</Text>
+                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
                     {orgForm.getValues('name')}
                   </Text>
                 </View>
                 <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500">Location:</Text>
-                  <Text className="text-xs font-bold text-slate-900">
+                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Location:</Text>
+                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
                     {orgForm.getValues('city')}, {orgForm.getValues('state')}
                   </Text>
                 </View>
                 <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500">Admin:</Text>
-                  <Text className="text-xs font-bold text-slate-900">
+                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Admin:</Text>
+                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
                     {adminForm.getValues('name')} ({adminForm.getValues('email')})
                   </Text>
                 </View>

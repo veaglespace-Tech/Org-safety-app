@@ -201,7 +201,7 @@ export default function AdminDashboard() {
   return (
     <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950"
-      contentContainerStyle={{ paddingBottom: 60 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Organization Banner */}
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
       </View>
 
       {/* 5. Footer Component */}
-      <View className="px-4 mt-4">
+      <View className="px-4 mt-auto">
         <AppFooter />
       </View>
 

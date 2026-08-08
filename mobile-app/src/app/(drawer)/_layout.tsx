@@ -10,6 +10,7 @@ import {
   User,
   LogOut,
   Settings,
+  Timer,
 } from 'lucide-react-native';
 import { logout } from '@/store/slices/authSlice';
 import { ROLES, formatRoleLabel } from '@/utils/roles';
@@ -56,6 +57,12 @@ function CustomDrawerContent(props: any) {
       route: '/(drawer)/profile',
       icon: Settings,
       color: '#94a3b8',
+    },
+    {
+      label: 'My Attendance',
+      route: '/(drawer)/attendance',
+      icon: Timer,
+      color: '#10b981',
     },
   ];
 
@@ -296,6 +303,13 @@ export default function DrawerLayout() {
           name="profile"
           options={{
             headerTitle: 'Profile Settings',
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="attendance/index"
+          options={{
+            headerTitle: 'My Attendance',
             drawerItemStyle: { display: 'none' },
           }}
         />

@@ -78,6 +78,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (hydrated) {
       const resolved = theme === 'system' ? (deviceColorScheme === 'dark' ? 'dark' : 'light') : theme;
       setColorScheme(resolved);
+
+      if (typeof document !== 'undefined' && document.documentElement) {
+        if (resolved === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          document.documentElement.style.colorScheme = 'dark';
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      }
     }
   }, [deviceColorScheme, theme, hydrated]);
 

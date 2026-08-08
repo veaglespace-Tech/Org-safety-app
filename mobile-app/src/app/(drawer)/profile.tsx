@@ -20,6 +20,7 @@ import {
   Camera,
   HeartPulse,
   Palette,
+  ChevronDown,
 } from 'lucide-react-native';
 
 import { authApi } from '@/services/api/authApi';
@@ -28,6 +29,7 @@ import { setCurrentUser } from '@/store/slices/authSlice';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { TextInput } from '@/components/ui/TextInput';
 import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
+import { ActionModal } from '@/components/ui/ActionModal';
 import { Button } from '@/components/ui/Button';
 import { ROLES } from '@/utils/roles';
 import { useAppTheme } from '@/context/ThemeContext';
@@ -60,6 +62,7 @@ export default function ProfileSettingsPage() {
     currentUser?.role === 'admin';
 
   const [activeTab, setActiveTab] = useState<'profile' | 'org'>('profile');
+  const [showBloodGroupModal, setShowBloodGroupModal] = useState(false);
 
   // Profile Form State
   const [formData, setFormData] = useState({
@@ -249,21 +252,21 @@ export default function ProfileSettingsPage() {
       >
         {/* Appearance Card */}
         <SurfaceCard className="p-5 mb-4">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 items-center justify-center">
+          <View className="flex-row items-center justify-between gap-2">
+            <View className="flex-row items-center gap-3 flex-1">
+              <View className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 items-center justify-center shrink-0">
                 <Palette size={20} color="#6366f1" />
               </View>
-              <View>
-                <Text className="text-sm font-extrabold text-slate-900 dark:text-white">
+              <View className="flex-1">
+                <Text className="text-sm font-extrabold text-slate-900 dark:text-white" numberOfLines={1}>
                   Theme & Appearance
                 </Text>
-                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium" numberOfLines={1}>
                   {isDark ? 'Dark mode is active' : 'Light mode is active'}
                 </Text>
               </View>
             </View>
-            <ThemeToggle variant="pill" />
+            <ThemeToggle variant="pill" className="shrink-0" />
           </View>
         </SurfaceCard>
 
@@ -354,30 +357,16 @@ export default function ProfileSettingsPage() {
             {/* Blood Group */}
             <View className="mb-4">
               <Text className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">Blood Group</Text>
-              <View className="flex-row flex-wrap gap-2">
-                {BLOOD_GROUPS.map((bg) => {
-                  const isSelected = formData.bloodGroup === bg;
-                  return (
-                    <TouchableOpacity
-                      key={bg}
-                      onPress={() => setFormData((p) => ({ ...p, bloodGroup: bg }))}
-                      className={`px-3 py-1.5 rounded-lg border ${
-                        isSelected
-                          ? 'bg-red-600 border-red-600 shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-bold ${
-                          isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-300'
-                        }`}
-                      >
-                        {bg}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <TouchableOpacity
+                onPress={() => setShowBloodGroupModal(true)}
+                activeOpacity={0.7}
+                className="flex-row items-center justify-between px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl"
+              >
+                <Text className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {formData.bloodGroup || 'Select Blood Group'}
+                </Text>
+                <ChevronDown size={18} color={isDark ? '#94a3b8' : '#64748b'} />
+              </TouchableOpacity>
             </View>
 
             <TextInput
@@ -468,6 +457,42 @@ export default function ProfileSettingsPage() {
           </SurfaceCard>
         )}
       </ScrollView>
+
+      {/* Blood Group Modal */}
+      <ActionModal
+        visible={showBloodGroupModal}
+        onClose={() => setShowBloodGroupModal(false)}
+        title="Select Blood Group"
+        subtitle="Choose your blood group from the list below"
+      >
+        <View className="flex-row flex-wrap gap-2">
+          {BLOOD_GROUPS.map((bg) => {
+            const isSelected = formData.bloodGroup === bg;
+            return (
+              <TouchableOpacity
+                key={bg}
+                onPress={() => {
+                  setFormData((p) => ({ ...p, bloodGroup: bg }));
+                  setShowBloodGroupModal(false);
+                }}
+                className={`w-[31%] py-3 rounded-xl border items-center ${
+                  isSelected
+                    ? 'bg-red-600 border-red-600 shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-bold ${
+                    isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {bg}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ActionModal>
     </View>
   );
 }
