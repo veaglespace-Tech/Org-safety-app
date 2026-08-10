@@ -3,7 +3,7 @@ import { View, Text, Image, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
-import { Redirect, router, usePathname, useNavigation } from 'expo-router';
+import { Redirect, router, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   LayoutDashboard,
@@ -22,7 +22,6 @@ function CustomDrawerContent(props: any) {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const pathname = usePathname();
-  const navigation = useNavigation();
   const { isDark } = useAppTheme();
 
   const handleLogout = () => {
@@ -173,8 +172,8 @@ function CustomDrawerContent(props: any) {
             <Pressable
               key={item.label}
               onPress={() => {
-                if (typeof (navigation as any).closeDrawer === 'function') {
-                  (navigation as any).closeDrawer();
+                if (typeof (props.navigation?.closeDrawer) === 'function') {
+                  props.navigation.closeDrawer();
                 }
                 router.push(item.route as any);
               }}

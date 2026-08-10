@@ -5,28 +5,59 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/tich-surksha-woman.jpg",
-    "scheme": "mobileapp",
+    "scheme": "tichisuraksha",
     "userInterfaceStyle": "automatic",
+
     "ios": {
+      "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
+      "buildNumber": "1",
       "icon": "./assets/images/tich-surksha-woman.jpg",
+      "supportsTablet": false,
+      "requireFullScreen": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Tichi Suraksha to access your camera to take a photo for your profile and organization logo.",
-        "NSPhotoLibraryUsageDescription": "Allow Tichi Suraksha to access your photos to set your profile and organization logo.",
-        "NSLocationWhenInUseUsageDescription": "Allow Tichi Suraksha to access your location to send accurate SOS alerts to your emergency contacts."
+        "NSCameraUsageDescription": "तिची सुरक्षा needs camera access to take profile photos and organization logos. This helps identify members in emergency situations.",
+        "NSPhotoLibraryUsageDescription": "तिची सुरक्षा needs access to your photo library to upload your profile photo and organization logo for identification during SOS emergencies.",
+        "NSPhotoLibraryAddUsageDescription": "तिची सुरक्षा needs permission to save photos related to your safety profile.",
+        "NSLocationWhenInUseUsageDescription": "तिची सुरक्षा needs your location to send accurate GPS coordinates to your emergency contacts when you trigger an SOS alert. Your location is only used during emergencies.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "तिची सुरक्षा needs background location access to continuously update your GPS position during an active SOS emergency, ensuring your contacts can track your safety in real time.",
+        "NSLocationAlwaysUsageDescription": "तिची सुरक्षा needs continuous location access during an active SOS emergency to keep sending updated GPS coordinates to emergency contacts every 2 minutes.",
+        "NSMicrophoneUsageDescription": "तिची सुरक्षा may need microphone access for future voice-based emergency features.",
+        "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly.",
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
+
     "android": {
+      "package": "com.veaglespace.tichiSurakshaApp",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/tich-surksha-woman.jpg"
+        "foregroundImage": "./assets/images/tich-surksha-woman.jpg",
+        "backgroundColor": "#FFFFFF"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.veaglespace.tichiSurakshaApp"
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.INTERNET",
+        "android.permission.CALL_PHONE",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
+      ],
+      "googleServicesFile": null
     },
+
     "web": {
       "output": "static",
       "favicon": "./assets/images/tich-surksha-woman.jpg"
     },
+
     "plugins": [
       "expo-router",
       [
@@ -37,12 +68,32 @@
           "imageWidth": 200
         }
       ],
-      "expo-image"
+      "expo-image",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "तिची सुरक्षा needs your location to send live GPS coordinates to your emergency contacts during an SOS alert.",
+          "locationAlwaysPermission": "Allow तिची सुरक्षा to track your location in the background during an active SOS emergency to keep your emergency contacts informed.",
+          "locationWhenInUsePermission": "तिची सुरक्षा needs location access to send your GPS coordinates when you trigger an SOS emergency alert.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "तिची सुरक्षा needs access to your photos to upload your profile picture and organization logo for your safety profile.",
+          "cameraPermission": "तिची सुरक्षा needs camera access to take your profile photo and organization logo for your safety identity card."
+        }
+      ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
+
     "extra": {
       "router": {},
       "eas": {
@@ -51,3 +102,4 @@
     }
   }
 }
+

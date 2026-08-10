@@ -373,15 +373,20 @@ ${locUrl || 'Location coordinates not available'}
             className="flex-[1.25] rounded-3xl p-3 items-center justify-center shadow-xl min-h-[145px] max-h-[160px] relative overflow-hidden"
             style={{ backgroundColor: '#f97316' }}
           >
-            <View className="bg-orange-100 rounded-full w-13 h-13 mb-1.5 items-center justify-center overflow-hidden border-2 border-white/95 shadow-sm">
+            <View className="bg-orange-100 rounded-full w-12 h-12 mb-1.5 items-center justify-center overflow-hidden border-2 border-white/95 shadow-sm">
               <Image
                 source={require('@/assets/images/tich-surksha-woman.jpg')}
-                style={{ width: 52, height: 52 }}
+                style={{ width: 48, height: 48 }}
                 resizeMode="cover"
               />
             </View>
-            <Text className="text-sm font-black text-slate-950 tracking-wider text-center">
-              “तिची सुरक्षा”
+            <Text
+              className="text-xs font-black text-slate-950 tracking-wide text-center"
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {`"तिची सुरक्षा"`}
             </Text>
             <View className="bg-white/45 px-2 py-0.5 rounded-full mt-1 border border-white/60">
               <Text className="text-[8px] font-black text-slate-950 text-center">
