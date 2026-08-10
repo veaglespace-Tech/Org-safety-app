@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
 import { Redirect, router, usePathname, useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   LayoutDashboard,
@@ -97,7 +96,6 @@ function CustomDrawerContent(props: any) {
               <Image
                 source={{ uri: user.profilePhoto || user.profile_photo }}
                 style={{ width: 56, height: 56 }}
-                defaultSource={require('@/assets/images/icon.png')}
               />
             ) : (
               <User color={isDark ? '#94a3b8' : '#64748b'} size={28} />
@@ -175,7 +173,9 @@ function CustomDrawerContent(props: any) {
             <Pressable
               key={item.label}
               onPress={() => {
-                navigation.dispatch(DrawerActions.closeDrawer());
+                if (typeof (navigation as any).closeDrawer === 'function') {
+                  (navigation as any).closeDrawer();
+                }
                 router.push(item.route as any);
               }}
               className={`flex-row items-center gap-3.5 mx-3 my-1 px-4 py-3.5 rounded-2xl ${
