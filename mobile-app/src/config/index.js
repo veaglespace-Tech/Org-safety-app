@@ -47,20 +47,7 @@ export const getLocalApiUrl = () => {
 };
 
 const resolveBaseUrl = () => {
-  // On Web: if running from localhost/127.0.0.1, always use Local API
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const hostname = window.location?.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `http://localhost:${DEFAULT_PORT}/api`;
-    }
-  }
-
-  // On Mobile (Expo Go / simulator): use dynamic host detection in __DEV__
-  if (__DEV__ && Platform.OS !== 'web') {
-    return getLocalApiUrl();
-  }
-
-  // Next, respect explicit environment variables if provided
+  // Always respect explicit environment variables first (dev & prod)
   const explicitUrl =
     process.env.EXPO_PUBLIC_API_URL_PROD ||
     process.env.EXPO_PUBLIC_API_URL ||
@@ -68,6 +55,19 @@ const resolveBaseUrl = () => {
 
   if (explicitUrl) {
     return trimTrailingSlash(explicitUrl);
+  }
+
+  // On Web: if running from localhost/127.0.0.1, use Local API
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const hostname = window.location?.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `http://localhost:${DEFAULT_PORT}/api`;
+    }
+  }
+
+  // On Mobile (Expo Go / simulator) with no env var: use dynamic host detection
+  if (__DEV__ && Platform.OS !== 'web') {
+    return getLocalApiUrl();
   }
 
   // Default to live backend URL in Production
