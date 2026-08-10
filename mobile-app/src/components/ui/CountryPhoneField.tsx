@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Phone, ChevronDown, Check, X } from 'lucide-react-native';
 import { COUNTRY_PHONE_OPTIONS, getDefaultCountryCode } from '@/utils/phone';
 

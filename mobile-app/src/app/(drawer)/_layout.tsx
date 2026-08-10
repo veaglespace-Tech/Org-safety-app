@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, Image, Pressable, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
-import { Redirect, router, usePathname } from 'expo-router';
+import { Redirect, router, usePathname, useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   LayoutDashboard,
@@ -21,6 +23,7 @@ function CustomDrawerContent(props: any) {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const pathname = usePathname();
+  const navigation = useNavigation();
   const { isDark } = useAppTheme();
 
   const handleLogout = () => {
@@ -94,6 +97,7 @@ function CustomDrawerContent(props: any) {
               <Image
                 source={{ uri: user.profilePhoto || user.profile_photo }}
                 style={{ width: 56, height: 56 }}
+                defaultSource={require('@/assets/images/icon.png')}
               />
             ) : (
               <User color={isDark ? '#94a3b8' : '#64748b'} size={28} />
@@ -170,7 +174,10 @@ function CustomDrawerContent(props: any) {
           return (
             <Pressable
               key={item.label}
-              onPress={() => router.push(item.route as any)}
+              onPress={() => {
+                navigation.dispatch(DrawerActions.closeDrawer());
+                router.push(item.route as any);
+              }}
               className={`flex-row items-center gap-3.5 mx-3 my-1 px-4 py-3.5 rounded-2xl ${
                 isActive
                   ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
@@ -273,12 +280,16 @@ export default function DrawerLayout() {
             return (
               <Pressable
                 onPress={() => router.push('/(drawer)/profile')}
-                className="mr-4 w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700"
+                className="mr-4 w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 items-center justify-center"
               >
-                <Image
-                  source={{ uri: headerUser?.profilePhoto || defaultAvatar }}
-                  className="w-full h-full"
-                />
+                {headerUser?.profilePhoto || headerUser?.profile_photo ? (
+                  <Image
+                    source={{ uri: headerUser.profilePhoto || headerUser.profile_photo }}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <User size={20} color={isDark ? '#cbd5e1' : '#475569'} />
+                )}
               </Pressable>
             );
           },

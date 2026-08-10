@@ -20,7 +20,8 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/tich-surksha-woman.jpg"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.veaglespace.tichiSurakshaApp"
     },
     "web": {
       "output": "static",
@@ -35,11 +36,18 @@
           "image": "./assets/images/tich-surksha-woman.jpg",
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d322f7f7-af76-4788-a158-03f14bff8736"
+      }
     }
   }
 }

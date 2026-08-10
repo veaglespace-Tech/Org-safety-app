@@ -256,9 +256,8 @@ ${locUrl || 'Location coordinates not available'}
         console.warn('Backend SOS trigger failed', err);
       });
 
-      // 3. Setup periodic location email updates
-      const rawInterval = process.env.EXPO_PUBLIC_SOS_INTERVAL_MINUTES || '5';
-      const sosIntervalMinutes = parseInt(rawInterval, 10) || 5;
+      // 3. Setup periodic location email updates (Strictly 2 mins)
+      const sosIntervalMinutes = 2;
 
       trackingIntervalRef.current = setInterval(async () => {
         try {
