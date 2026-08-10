@@ -4,14 +4,14 @@
     "slug": "mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/tich-surksha-woman.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "tichisuraksha",
     "userInterfaceStyle": "automatic",
 
     "ios": {
       "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
       "buildNumber": "1",
-      "icon": "./assets/images/tich-surksha-woman.jpg",
+      "icon": "./assets/images/icon.png",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
@@ -22,8 +22,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "तिची सुरक्षा needs background location access to continuously update your GPS position during an active SOS emergency, ensuring your contacts can track your safety in real time.",
         "NSLocationAlwaysUsageDescription": "तिची सुरक्षा needs continuous location access during an active SOS emergency to keep sending updated GPS coordinates to emergency contacts every 2 minutes.",
         "NSMicrophoneUsageDescription": "तिची सुरक्षा may need microphone access for future voice-based emergency features.",
-        "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly.",
-        "UIBackgroundModes": ["location", "fetch"]
+        "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly."
       }
     },
 
@@ -31,7 +30,7 @@
       "package": "com.veaglespace.tichiSurakshaApp",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/tich-surksha-woman.jpg",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "predictiveBackGestureEnabled": false,
@@ -49,13 +48,12 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
-      ],
-      "googleServicesFile": null
+      ]
     },
 
     "web": {
       "output": "static",
-      "favicon": "./assets/images/tich-surksha-woman.jpg"
+      "favicon": "./assets/images/icon.png"
     },
 
     "plugins": [
@@ -64,7 +62,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",
-          "image": "./assets/images/tich-surksha-woman.jpg",
+          "image": "./assets/images/icon.png",
           "imageWidth": 200
         }
       ],
