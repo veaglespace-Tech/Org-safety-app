@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, ShieldAlert, UserCog } from "lucide-react";
+import { LayoutDashboard, ShieldAlert, UserCog, MailWarning } from "lucide-react";
 import { useSelector } from "react-redux";
 import DashboardNavbar from "@/components/layout/DashboardNavbar";
 import Footer from "@/components/layout/Footer";
@@ -17,6 +17,7 @@ export default function OrgLayout({ children }) {
   const navItems = [
     { name: "Dashboard", href: "/org/dashboard", icon: LayoutDashboard },
     { name: "तिची सुरक्षा", href: "/org/tich-surksha", icon: ShieldAlert },
+    { name: "Emergency Emails", href: "/org/emergency-emails", icon: MailWarning },
     { name: "Profile Settings", href: "/org/profile", icon: UserCog },
   ];
 

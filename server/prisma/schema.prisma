@@ -52,6 +52,7 @@ model users {
   profile_photo     String?       @db.Text
   created_at      DateTime?     @default(now()) @db.Timestamp(0)
   organizations   organizations? @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "users_ibfk_1")
+  emergency_emails emergency_emails[]
 
   @@index([organization_id], map: "organization_id")
 }
@@ -65,4 +66,14 @@ enum users_role {
   admin
   member
   super_admin
+}
+
+model emergency_emails {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  email      String    @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
 }

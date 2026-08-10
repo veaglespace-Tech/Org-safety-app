@@ -4,7 +4,7 @@ import { buildBaseQuery } from "./baseApi";
 export const orgApi = createApi({
   reducerPath: "orgApi",
   baseQuery: buildBaseQuery(),
-  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments"],
+  tagTypes: ["OrgUsers", "OrgTeams", "OrgAttendance", "OrgNotifications", "OrgDashboard", "RegistrationRequests", "OrgUserAttendance", "RegularizationRequests", "OrgInstruments", "EmergencyEmails"],
   endpoints: (builder) => ({
     onboardOrganization: builder.mutation({
       query: (payload) => ({
@@ -308,6 +308,25 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["OrgUsers"],
     }),
+    getEmergencyEmails: builder.query({
+      query: () => "/emergency-emails",
+      providesTags: ["EmergencyEmails"],
+    }),
+    addEmergencyEmail: builder.mutation({
+      query: (payload) => ({
+        url: "/emergency-emails",
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["EmergencyEmails"],
+    }),
+    deleteEmergencyEmail: builder.mutation({
+      query: (id) => ({
+        url: `/emergency-emails/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["EmergencyEmails"],
+    }),
   }),
 });
 
@@ -361,4 +380,7 @@ export const {
   useDeleteOrgInstrumentMutation,
   useUnassignOrgInstrumentMutation,
   useUpdateOrgInstrumentAssignmentMutation,
+  useGetEmergencyEmailsQuery,
+  useAddEmergencyEmailMutation,
+  useDeleteEmergencyEmailMutation,
 } = orgApi;

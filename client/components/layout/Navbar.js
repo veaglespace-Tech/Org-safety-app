@@ -103,7 +103,8 @@ export default function Navbar() {
         <div className="site-container">
           <div className="flex h-16 items-center justify-between gap-2.5 sm:h-20 sm:gap-3 min-[1180px]:gap-6">
             <Link href="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none lg:gap-3">
-              <div key={pathname} className="brand-logo-reveal relative flex shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105">
+              <div key={pathname} className="brand-logo-reveal relative flex shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 h-10 w-10 overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+                <Image src="/images/tich-surksha-woman.jpg" alt="Logo" fill className="object-cover" />
               </div>
               <span className="min-w-0 truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
                 ढोल - ताशा <span className="brand-wordmark">महासंघ</span>

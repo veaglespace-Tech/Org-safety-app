@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -23,11 +23,12 @@ export default function RegisterIndex() {
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      className="bg-slate-50 dark:bg-slate-950 px-6 pt-12 pb-8"
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="px-6 pt-8 pb-8"
+        showsVerticalScrollIndicator={false}
+      >
       {/* Top Header Actions */}
       <View className="flex-row items-center justify-between mb-6">
         <TouchableOpacity
@@ -110,5 +111,6 @@ export default function RegisterIndex() {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

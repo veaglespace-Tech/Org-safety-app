@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, Pressable, ScrollView } from 'react-native';
+import { View, Text, Image, Pressable, ScrollView, SafeAreaView } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
 import { Redirect, router, usePathname } from 'expo-router';
@@ -10,7 +10,7 @@ import {
   User,
   LogOut,
   Settings,
-  Timer,
+  MailWarning,
 } from 'lucide-react-native';
 import { logout } from '@/store/slices/authSlice';
 import { ROLES, formatRoleLabel } from '@/utils/roles';
@@ -53,26 +53,27 @@ function CustomDrawerContent(props: any) {
       color: '#ef4444',
     },
     {
+      label: 'Emergency Emails',
+      route: '/(drawer)/emergency-emails',
+      icon: MailWarning,
+      color: '#f43f5e',
+    },
+    {
       label: 'Profile Settings',
       route: '/(drawer)/profile',
       icon: Settings,
       color: '#94a3b8',
     },
-    {
-      label: 'My Attendance',
-      route: '/(drawer)/attendance',
-      icon: Timer,
-      color: '#10b981',
-    },
   ];
 
   return (
-    <View
+    <SafeAreaView
       style={{
         flex: 1,
         backgroundColor: isDark ? '#070e1e' : '#ffffff',
       }}
     >
+      <View style={{ flex: 1 }}>
       {/* User Profile Header */}
       <View
         className={`px-5 pt-14 pb-6 border-b ${
@@ -228,7 +229,8 @@ function CustomDrawerContent(props: any) {
           </Text>
         </Pressable>
       </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -265,17 +267,21 @@ export default function DrawerLayout() {
             borderBottomColor: isDark ? '#1e293b' : '#e2e8f0',
             borderBottomWidth: 1,
           },
-          headerRight: () => (
-            <View className="flex-row items-center gap-2 mr-4">
-              <ThemeToggle />
+          headerRight: () => {
+            const { user: headerUser } = useSelector((state: any) => state.auth);
+            const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(headerUser?.name || 'U')}&background=6366f1&color=fff&size=150`;
+            return (
               <Pressable
-                onPress={() => router.push('/(drawer)/sos')}
-                className="bg-red-500/10 w-9 h-9 rounded-full items-center justify-center border border-red-500/30"
+                onPress={() => router.push('/(drawer)/profile')}
+                className="mr-4 w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700"
               >
-                <Shield color="#ef4444" size={18} />
+                <Image
+                  source={{ uri: headerUser?.profilePhoto || defaultAvatar }}
+                  className="w-full h-full"
+                />
               </Pressable>
-            </View>
-          ),
+            );
+          },
         }}
       >
         <Drawer.Screen
@@ -300,16 +306,16 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="profile"
+          name="emergency-emails"
           options={{
-            headerTitle: 'Profile Settings',
+            headerTitle: 'Emergency Emails',
             drawerItemStyle: { display: 'none' },
           }}
         />
         <Drawer.Screen
-          name="attendance/index"
+          name="profile"
           options={{
-            headerTitle: 'My Attendance',
+            headerTitle: 'Profile Settings',
             drawerItemStyle: { display: 'none' },
           }}
         />

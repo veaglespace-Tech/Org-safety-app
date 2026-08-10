@@ -55,15 +55,17 @@ export default function MemberDashboard() {
         {/* Organization Banner Section */}
         <div className="surface-card relative overflow-hidden rounded-[2rem] p-6 sm:p-8 mb-8 border border-slate-200/50 dark:border-slate-800/50">
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-center gap-5 text-center sm:text-left">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-slate-800 p-1 shadow-lg border border-slate-200/60 dark:border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-slate-800 shadow-lg border border-slate-200/60 dark:border-slate-700 shrink-0 overflow-hidden relative">
               {user?.organizations?.logo || user?.organization?.logo ? (
                 <img
                   src={user?.organizations?.logo || user?.organization?.logo}
                   alt="Organization Logo"
-                  className="w-full h-full object-contain rounded-xl"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <Building2 className="w-10 h-10 text-slate-400" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Building2 className="w-10 h-10 text-slate-400" />
+                </div>
               )}
             </div>
             <div>

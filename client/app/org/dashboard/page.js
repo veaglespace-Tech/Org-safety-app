@@ -101,15 +101,17 @@ export default function OrgDashboard() {
                   Here you can manage your {user?.organizations?.name || user?.organization?.name || "organization's"} members and share your referral link to instantly add new people to your organization.
                 </p>
               </div>
-              <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-[2.5rem] bg-white dark:bg-slate-800 p-2 shadow-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="w-32 h-32 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-[2.5rem] bg-white dark:bg-slate-800 shadow-xl border border-slate-200/80 dark:border-slate-700 shrink-0 overflow-hidden relative">
                 {user?.organizations?.logo || user?.organization?.logo ? (
                   <img
                     src={user?.organizations?.logo || user?.organization?.logo}
                     alt="Organization Logo"
-                    className="w-full h-full object-contain rounded-2xl"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
-                  <Building2 className="w-16 h-16 sm:w-20 sm:h-20 text-slate-400" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Building2 className="w-16 h-16 sm:w-20 sm:h-20 text-slate-400" />
+                  </div>
                 )}
               </div>
             </div>

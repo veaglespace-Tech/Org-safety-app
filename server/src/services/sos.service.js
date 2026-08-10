@@ -12,9 +12,6 @@ class SOSService {
       throw new Error("User not found");
     }
 
-    // Dynamic Member Photo (Use actual uploaded photo, or org logo fallback, or null)
-    const memberPhoto = user.profile_photo || user.organizations?.logo || null;
-
     const distressMessage = `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
 
 👤 Name: ${user.name}
@@ -22,75 +19,11 @@ class SOSService {
 📱 Contact: ${user.phone || 'N/A'}
 🆘 Emergency Contact: ${user.emergency_contact || 'N/A'}
 🏢 Organisation: ${user.organizations?.name || 'N/A'} (ID: ${user.organization_id})
-${memberPhoto ? `🖼️ Member Photo: ${memberPhoto}\n` : ''}
+🖼️ Profile Photo: ${user.profile_photo || 'N/A'}
+
 📍 LIVE GPS LOCATION: ${locationUrl || 'Location not provided'}
 
 ⚠️ I need immediate assistance! Please verify my safety.`;
-
-    const initials = user.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
-
-    const htmlMessage = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #e11d48; border-radius: 16px; overflow: hidden; background-color: #ffffff;">
-      <div style="background-color: #e11d48; color: #ffffff; padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 22px; letter-spacing: 1px;">🚨 EMERGENCY SOS DISTRESS ALERT</h1>
-        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Immediate assistance required</p>
-      </div>
-
-      <div style="padding: 24px;">
-        <div style="display: flex; align-items: center; margin-bottom: 20px; background-color: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
-          ${
-            memberPhoto
-              ? `<img src="${memberPhoto}" alt="${user.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e11d48; margin-right: 16px;" />`
-              : `<div style="width: 70px; height: 70px; border-radius: 50%; background-color: #e11d48; color: #ffffff; line-height: 70px; text-align: center; font-size: 28px; font-weight: bold; margin-right: 16px;">${initials}</div>`
-          }
-          <div>
-            <h2 style="margin: 0; font-size: 20px; color: #0f172a;">${user.name}</h2>
-            <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">Role: <strong style="text-transform: uppercase;">${user.role || 'MEMBER'}</strong></p>
-            <p style="margin: 2px 0 0 0; color: #64748b; font-size: 14px;">Org: <strong>${user.organizations?.name || 'Safety Portal'}</strong></p>
-          </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 10px 0; color: #64748b; font-weight: bold; width: 40%;">📧 Email:</td>
-            <td style="padding: 10px 0; color: #0f172a;">${user.email}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 10px 0; color: #64748b; font-weight: bold;">📱 Phone:</td>
-            <td style="padding: 10px 0; color: #0f172a; font-family: monospace; font-weight: bold;">${user.phone || 'Not provided'}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 10px 0; color: #e11d48; font-weight: bold;">🆘 Emergency Contact:</td>
-            <td style="padding: 10px 0; color: #e11d48; font-family: monospace; font-weight: bold;">${user.emergency_contact || 'Not provided'}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 10px 0; color: #64748b; font-weight: bold;">🩸 Blood Group:</td>
-            <td style="padding: 10px 0; color: #0f172a;">${user.blood_group || 'N/A'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 0; color: #64748b; font-weight: bold;">📍 City:</td>
-            <td style="padding: 10px 0; color: #0f172a;">${user.city || 'N/A'}</td>
-          </tr>
-        </table>
-
-        ${locationUrl ? `
-        <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px;">
-          <p style="margin: 0 0 10px 0; font-weight: bold; color: #be123c; font-size: 15px;">📍 LIVE GPS LOCATION PINPOINTED</p>
-          <a href="${locationUrl}" target="_blank" style="display: inline-block; background-color: #e11d48; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px;">View Live Google Maps Location</a>
-          <p style="margin: 8px 0 0 0; font-size: 12px; color: #9f1239; word-break: break-all;">${locationUrl}</p>
-        </div>
-        ` : `
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px;">
-          <p style="margin: 0; color: #64748b;">GPS Coordinates not provided at time of dispatch.</p>
-        </div>
-        `}
-
-        <div style="font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-          This is an automated emergency distress message from <strong>${user.organizations?.name || 'तिची सुरक्षा'}</strong>.
-        </div>
-      </div>
-    </div>
-    `;
 
     const adminEmails = [];
     if (process.env.GLOBAL_SOS_EMAIL) {
@@ -109,6 +42,8 @@ ${memberPhoto ? `🖼️ Member Photo: ${memberPhoto}\n` : ''}
         adminEmails.push(a.email);
       }
     });
+
+
     
     const adminPhones = admins.map(a => a.phone).filter(Boolean);
     if (process.env.ADMIN_PHONE && !adminPhones.includes(process.env.ADMIN_PHONE)) {
@@ -116,12 +51,56 @@ ${memberPhoto ? `🖼️ Member Photo: ${memberPhoto}\n` : ''}
     }
     
     const dispatchPhones = [...adminPhones];
-    if (user.emergency_contact && !dispatchPhones.includes(user.emergency_contact)) {
-      dispatchPhones.push(user.emergency_contact);
+    if (user.emergency_contact) {
+      const eContacts = user.emergency_contact.split(',').map(n => n.trim()).filter(Boolean);
+      eContacts.forEach(contact => {
+         if (!dispatchPhones.includes(contact)) {
+            dispatchPhones.push(contact);
+         }
+      });
     }
 
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ef4444&color=fff&size=200`;
+    let profileImageUrl = user.profile_photo || defaultAvatar;
+    
+    // Fix for email clients (like Gmail) that block images without an extension
+    if (profileImageUrl && !profileImageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+      if (profileImageUrl.includes('imagekit.io')) {
+        profileImageUrl += '?tr=f-jpg#.jpg';
+      } else {
+        profileImageUrl += '#.jpg';
+      }
+    }
+
+    const distressHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #ef4444; border-radius: 10px; padding: 20px;">
+        <h2 style="color: #ef4444; text-align: center; margin-bottom: 20px;">🚨 EMERGENCY SOS DISTRESS ALERT 🚨</h2>
+        <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <p><strong>👤 Name:</strong> ${user.name}</p>
+          <p><strong>📧 Email:</strong> ${user.email}</p>
+          <p><strong>📱 Contact:</strong> ${user.phone || 'N/A'}</p>
+          <p><strong>🆘 Emergency Contact:</strong> ${user.emergency_contact || 'N/A'}</p>
+          <p><strong>🏢 Organisation:</strong> ${user.organizations?.name || 'N/A'} (ID: ${user.organization_id})</p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p><strong>🖼️ Profile Photo:</strong></p>
+          <img src="${profileImageUrl}" alt="Profile Photo" style="max-width: 200px; max-height: 200px; border-radius: 10px; border: 2px solid #ccc; object-fit: cover; margin-bottom: 10px;" />
+          <p style="margin:0; font-size: 0.85em;"><a href="${profileImageUrl}" target="_blank" style="color: #ef4444; text-decoration: underline;">Click here to view photo</a></p>
+          <p style="margin-top:5px; font-size: 0.75em; color: #666; word-break: break-all;">URL: ${profileImageUrl}</p>
+        </div>
+        
+        <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #22c55e;">
+          <p style="margin:0;"><strong>📍 LIVE GPS LOCATION:</strong></p>
+          <p style="margin-top:10px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">View Live Location</a></p>
+          <p style="margin-top:10px; font-size: 0.85em; color: #666;">URL: ${locationUrl || 'Location not provided'}</p>
+        </div>
+        <p style="color: #ef4444; font-weight: bold; text-align: center; font-size: 1.1em; margin-top: 20px;">⚠️ I need immediate assistance! Please verify my safety.</p>
+      </div>
+    `;
+
     const emailSubject = `🚨 URGENT: SOS Alert from ${user.name}`;
-    const emailPromise = notificationService.sendEmail(adminEmails.join(','), emailSubject, distressMessage, htmlMessage);
+    const emailPromise = notificationService.sendEmail(adminEmails.join(','), emailSubject, distressMessage, distressHtml);
 
     const whatsappPromise = notificationService.sendWhatsApp(dispatchPhones, distressMessage);
 
@@ -161,6 +140,8 @@ ${memberPhoto ? `🖼️ Member Photo: ${memberPhoto}\n` : ''}
       }
     });
     
+
+    
     if (adminEmails.length > 0) {
       const updateMessage = `🚨 EMERGENCY SOS UPDATE 🚨
 
@@ -174,9 +155,45 @@ The user is STILL in an active emergency and has not marked themselves as safe.
 
 📍 LATEST LIVE LOCATION: ${locationUrl || 'Location not available'}
 `;
+
+      const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ef4444&color=fff&size=200`;
+      let profileImageUrl = user.profile_photo || defaultAvatar;
+      if (profileImageUrl && !profileImageUrl.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+        if (profileImageUrl.includes('imagekit.io')) {
+          profileImageUrl += '?tr=f-jpg#.jpg';
+        } else {
+          profileImageUrl += '#.jpg';
+        }
+      }
+      
+      const updateHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #f59e0b; border-radius: 10px; padding: 20px;">
+        <h2 style="color: #f59e0b; text-align: center; margin-bottom: 20px;">🚨 EMERGENCY SOS UPDATE 🚨</h2>
+        <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <p><strong>👤 Name:</strong> ${user.name}</p>
+          <p><strong>📞 Phone:</strong> ${user.phone || 'Not provided'}</p>
+          <p><strong>🚨 Emergency Contact:</strong> ${user.emergency_contact || 'Not provided'}</p>
+          <p><strong>🏢 Organization:</strong> ${user.organizations?.name || 'N/A'}</p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+          <p><strong>🖼️ Profile Photo:</strong></p>
+          <img src="${profileImageUrl}" alt="Profile Photo" style="max-width: 200px; max-height: 200px; border-radius: 10px; border: 2px solid #ccc; object-fit: cover; margin-bottom: 10px;" />
+          <p style="margin:0; font-size: 0.85em;"><a href="${profileImageUrl}" target="_blank" style="color: #f59e0b; text-decoration: underline;">Click here to view photo</a></p>
+          <p style="margin-top:5px; font-size: 0.75em; color: #666; word-break: break-all;">URL: ${profileImageUrl}</p>
+        </div>
+        
+        <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #22c55e;">
+          <p style="margin:0;"><strong>📍 LATEST LIVE LOCATION:</strong></p>
+          <p style="margin-top:10px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">View Live Location</a></p>
+          <p style="margin-top:10px; font-size: 0.85em; color: #666;">URL: ${locationUrl || 'Location not provided'}</p>
+        </div>
+        <p style="color: #f59e0b; font-weight: bold; text-align: center; font-size: 1.1em; margin-top: 20px;">⚠️ THIS IS AN AUTOMATED ${process.env.SOS_INTERVAL_MINUTES || '5'}-MINUTE UPDATE.<br/>The user is STILL in an active emergency.</p>
+      </div>
+      `;
       
       const subject = `🚨 SOS UPDATE: ${user.name} is still in danger`;
-      await notificationService.sendEmail(adminEmails.join(','), subject, updateMessage);
+      await notificationService.sendEmail(adminEmails.join(','), subject, updateMessage, updateHtml);
     }
 
     return { success: true, message: "SOS location update sent successfully" };
@@ -209,7 +226,8 @@ The user is STILL in an active emergency and has not marked themselves as safe.
         adminEmails.push(a.email);
       }
     });
-    
+
+
     if (adminEmails.length > 0) {
       const stopMessage = `✅ SOS RESOLVED ✅
 

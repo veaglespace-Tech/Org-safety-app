@@ -53,7 +53,7 @@ export default function MemberDashboard() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Join ${user?.organization?.name || user?.organizations?.name || 'our organization'} on the Tichi Suraksha Safety Portal!\nRegister here: ${referralLink}`,
+        message: `Join ${user?.organization?.name || user?.organizations?.name || 'our organization'} on the तिची सुरक्षा Safety Portal!\nRegister here: ${referralLink}`,
       });
     } catch (e) {
       console.error(e);

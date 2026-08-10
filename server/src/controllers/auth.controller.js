@@ -13,10 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 const generateTokenAndSetCookie = (res, userId, role) => {
   const token = jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
+  const isProduction = process.env.NODE_ENV === 'production';
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
   return token;
@@ -306,10 +307,20 @@ exports.updateMe = async (req, res) => {
   try {
     const { name, phone, emergencyContact, email, password, profilePhoto, city, gender, bloodGroup, currentAddress, permanentAddress } = req.body;
     
+    // Normalize emergency contacts: split by comma, clean each number, rejoin
+    let normalizedEmergencyContact = null;
+    if (emergencyContact) {
+      const cleaned = emergencyContact
+        .split(',')
+        .map(n => n.replace(/\D/g, '').trim()) // keep only digits
+        .filter(n => n.length >= 10 && n.length <= 15); // valid phone length
+      normalizedEmergencyContact = cleaned.length > 0 ? cleaned.join(',') : null;
+    }
+
     const updateData = {
       name,
       phone,
-      emergency_contact: emergencyContact,
+      emergency_contact: normalizedEmergencyContact,
       city,
       gender,
       blood_group: bloodGroup,
@@ -319,12 +330,37 @@ exports.updateMe = async (req, res) => {
 
     if (profilePhoto !== undefined) {
       if (profilePhoto && profilePhoto.startsWith('data:image/')) {
-        const response = await imagekit.upload({
-          file: profilePhoto,
-          fileName: `user_${req.user.userId}_profile_${Date.now()}`,
-          folder: '/user_profiles'
-        });
-        updateData.profile_photo = response.url;
+        // Check image size: base64 string ~ 1.37x actual size. Reject if > 5MB base64 (~3.6MB file)
+        const base64SizeBytes = Math.ceil((profilePhoto.length * 3) / 4);
+        if (base64SizeBytes > 5 * 1024 * 1024) {
+          return res.status(400).json({ error: 'Image is too large. Please select an image smaller than 5MB.' });
+        }
+
+        // Upload to ImageKit with retry on connection reset
+        let uploadResponse = null;
+        let lastError = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            uploadResponse = await imagekit.upload({
+              file: profilePhoto,
+              fileName: `user_${req.user.userId}_profile_${Date.now()}`,
+              folder: '/user_profiles'
+            });
+            break; // success – exit loop
+          } catch (uploadErr) {
+            lastError = uploadErr;
+            if (attempt < 3) {
+              await new Promise(r => setTimeout(r, 1000 * attempt)); // wait 1s, 2s before retry
+            }
+          }
+        }
+
+        if (!uploadResponse) {
+          console.error('ImageKit upload failed after 3 attempts:', lastError?.message);
+          return res.status(502).json({ error: 'Image upload failed. Please try again with a smaller image.' });
+        }
+
+        updateData.profile_photo = uploadResponse.url;
       } else {
         updateData.profile_photo = profilePhoto;
       }
@@ -366,6 +402,9 @@ exports.updateMe = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating profile:", error);
+    if (error.code === 'P2002' && error.meta && error.meta.target === 'email') {
+      return res.status(400).json({ error: "This email address is already in use by another account." });
+    }
     res.status(500).json({ error: "Internal server error" });
   }
 };

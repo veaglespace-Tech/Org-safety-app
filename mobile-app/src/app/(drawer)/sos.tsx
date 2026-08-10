@@ -10,6 +10,7 @@ import {
   Linking,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
 import {
@@ -160,6 +161,45 @@ export default function SOSScreen() {
     }
   };
 
+  // Parse emergency contacts: comma-separated string → clean array of numbers
+  const getEmergencyNumbers = (): string[] => {
+    const raw = user?.emergencyContact || user?.emergency_contact || '';
+    if (!raw) return [];
+    return String(raw)
+      .split(',')
+      .map((n: string) => n.replace(/\D/g, '').trim())
+      .filter((n: string) => n.length >= 10 && n.length <= 15);
+  };
+
+  // Build WhatsApp message with user details and GPS location
+  const buildWhatsAppMessage = (locUrl: string): string => {
+    const orgName = user?.organization?.name || user?.organizations?.name || 'Safety Portal';
+    return (
+      `🚨 *EMERGENCY SOS ALERT* 🚨\n\n` +
+      `👤 *Name:* ${user?.name || 'Unknown'}\n` +
+      `📱 *Phone:* ${user?.phone || 'N/A'}\n` +
+      `🏢 *Organization:* ${orgName}\n\n` +
+      `📍 *Live GPS Location:*\n${locUrl || 'Location not available'}\n\n` +
+      `⚠️ *I need immediate help! Please check on me urgently.*`
+    );
+  };
+
+  // Direct Emergency Channels Dispatch (WhatsApp + Phone Call)
+  const triggerDirectEmergencyChannels = (locUrl: string) => {
+    const message = buildWhatsAppMessage(locUrl);
+
+    // 1. WhatsApp Share (Opens contact selector to allow multi-select)
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    Linking.openURL(waUrl).catch((err) => console.warn('Could not open WhatsApp:', err));
+
+    // 2. Phone Call - Strictly to 112 (Police/Emergency)
+    setTimeout(() => {
+      Linking.openURL(`tel:112`).catch((err) =>
+        console.warn('Could not open phone dialer:', err)
+      );
+    }, 500);
+  };
+
   // Build Distress Message
   const getDistressMessage = (locUrl: string) => {
     return `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
@@ -176,28 +216,6 @@ ${locUrl || 'Location coordinates not available'}
 ⚠️ Immediate emergency assistance requested! Please check immediately.`;
   };
 
-  // Direct Emergency Channels Dispatch (WhatsApp + Phone Call)
-  const triggerDirectEmergencyChannels = (locUrl: string) => {
-    const distressMessage = getDistressMessage(locUrl);
-    const parentOrEmergency = user?.emergencyContact || user?.emergency_contact;
-    const parentNumberStr = parentOrEmergency ? String(parentOrEmergency).replace(/\D/g, '') : '';
-    const emergencyNumber = parentNumberStr || '112';
-
-    // 1. WhatsApp Dispatch to Parent/Emergency Contact
-    const waUrl = parentNumberStr
-      ? `https://wa.me/${parentNumberStr}?text=${encodeURIComponent(distressMessage)}`
-      : `https://wa.me/?text=${encodeURIComponent(distressMessage)}`;
-
-    Linking.openURL(waUrl).catch((err) => console.warn('Could not open WhatsApp:', err));
-
-    // 2. Direct Phone Call to Parent / Emergency Number
-    setTimeout(() => {
-      Linking.openURL(`tel:${emergencyNumber}`).catch((err) =>
-        console.warn('Could not trigger phone dialer:', err)
-      );
-    }, 1200);
-  };
-
   // SOS Action Triggers (Awakened after 3-second hold)
   const handleTriggerSos = async () => {
     setIsHolding(false);
@@ -212,37 +230,40 @@ ${locUrl || 'Location coordinates not available'}
 
       if (!locUrl) {
         try {
-          const freshLoc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
-          locUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
-          setLocation({
-            lat: freshLoc.coords.latitude,
-            lng: freshLoc.coords.longitude,
-            accuracy: freshLoc.coords.accuracy || 10,
-          });
+          // Use last known position for instant fallback if current location state is missing
+          const freshLoc = await Location.getLastKnownPositionAsync();
+          if (freshLoc) {
+            locUrl = `https://maps.google.com/?q=${freshLoc.coords.latitude},${freshLoc.coords.longitude}`;
+            setLocation({
+              lat: freshLoc.coords.latitude,
+              lng: freshLoc.coords.longitude,
+              accuracy: freshLoc.coords.accuracy || 10,
+            });
+          }
         } catch (e) {
           console.warn('Fallback location fetch error:', e);
         }
       }
 
-      // 1. Dispatch SOS to backend server (Sends automated Hostinger SMTP emails to police/admins/CC)
-      await (triggerSos as any)({ locationUrl: locUrl }).unwrap();
-
       setStatus('success');
       setIsSosActive(true);
 
-      // 2. Automatically launch WhatsApp & Phone Call to Parent/Emergency contact
+      // 1. Automatically launch WhatsApp & Phone Call INSTANTLY (don't wait for backend)
       triggerDirectEmergencyChannels(locUrl);
 
-      // 3. Setup periodic location email updates after particular time interval (e.g. 5 minutes)
+      // 2. Dispatch SOS to backend server in background (Sends automated emails)
+      (triggerSos as any)({ locationUrl: locUrl }).unwrap().catch((err: any) => {
+        console.warn('Backend SOS trigger failed', err);
+      });
+
+      // 3. Setup periodic location email updates
       const rawInterval = process.env.EXPO_PUBLIC_SOS_INTERVAL_MINUTES || '5';
       const sosIntervalMinutes = parseInt(rawInterval, 10) || 5;
 
       trackingIntervalRef.current = setInterval(async () => {
         try {
           let updatedLoc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
+            accuracy: Location.Accuracy.Balanced,
           });
           let newLocUrl = `https://maps.google.com/?q=${updatedLoc.coords.latitude},${updatedLoc.coords.longitude}`;
           await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
@@ -253,15 +274,10 @@ ${locUrl || 'Location coordinates not available'}
     } catch (err) {
       console.error('SOS Trigger Failed', err);
       setStatus('error');
-      // Even if backend email fails, trigger device direct channels for safety!
       const fallbackLocUrl = location
         ? `https://maps.google.com/?q=${location.lat},${location.lng}`
         : '';
       triggerDirectEmergencyChannels(fallbackLocUrl);
-      Alert.alert(
-        'Emergency Alert Dispatched',
-        'Direct emergency channels (WhatsApp & Call to parent) have been activated on your device.'
-      );
     }
   };
 
@@ -337,13 +353,14 @@ ${locUrl || 'Location coordinates not available'}
         <View className="flex-row gap-2.5 items-stretch">
           {/* Card 1: Left - Full Covered Org Image */}
           <View
-            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-md min-h-[145px] max-h-[160px] bg-slate-900 items-center justify-center"
+            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] max-h-[160px] p-2 items-center justify-center"
+            style={{ backgroundColor: '#ffffff' }}
           >
             {orgLogo ? (
               <Image
                 source={{ uri: orgLogo }}
                 style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             ) : (
               <View className="w-full h-full items-center justify-center bg-slate-900">
@@ -392,7 +409,7 @@ ${locUrl || 'Location coordinates not available'}
       <View className="px-3.5 sm:px-4 mt-4">
         <View className="bg-white dark:bg-slate-900 border border-rose-500/30 rounded-[2rem] p-4 sm:p-6 shadow-sm dark:shadow-2xl relative overflow-hidden">
           {/* Header */}
-          <View className="flex-row items-center gap-2 mb-6">
+          <View className="flex-row items-center justify-center gap-2 mb-6">
             <Shield size={18} color="#f43f5e" />
             <Text className="text-xs font-black tracking-widest uppercase text-rose-500 dark:text-rose-400">
               EMERGENCY SOS DISPATCH
@@ -467,7 +484,7 @@ ${locUrl || 'Location coordinates not available'}
 
                 <View className="items-center justify-center relative z-10 px-2">
                   {isTriggering || isStopping ? (
-                    <Loader2 size={36} color="#ffffff" className="animate-spin" />
+                    <ActivityIndicator size="large" color="#ffffff" />
                   ) : isSosActive ? (
                     <>
                       <CheckCircle2 size={32} color="#f43f5e" />

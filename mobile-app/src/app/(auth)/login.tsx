@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Platform, SafeAreaView, KeyboardAvoidingView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { useForm, Controller } from 'react-hook-form';
@@ -13,6 +13,8 @@ import { setSession } from '../../store/slices/authSlice';
 import { resolveDashboardPath } from '../../utils/roles';
 import { normalizeEmailInput } from '../../utils/formValidation';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { ArrowLeft } from 'lucide-react-native';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
@@ -25,6 +27,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { isDark } = useAppTheme();
   const { token, user, hydrated, redirectPath } = useAuthSession();
   const [userSignIn, { isLoading }] = useUserSignInMutation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -87,13 +90,26 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      className="bg-slate-50 dark:bg-slate-950 px-6 pt-16 pb-8"
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          className="px-6 pt-10 pb-8"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
       {/* Top Header Controls */}
-      <View className="flex-row justify-end mb-4">
+      <View className="flex-row items-center justify-between mb-4">
+        <TouchableOpacity
+          onPress={() => router.push('/' as any)}
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm"
+        >
+          <ArrowLeft size={18} color={isDark ? '#cbd5e1' : '#475569'} />
+        </TouchableOpacity>
         <ThemeToggle />
       </View>
 
@@ -182,5 +198,7 @@ export default function LoginScreen() {
         </View>
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

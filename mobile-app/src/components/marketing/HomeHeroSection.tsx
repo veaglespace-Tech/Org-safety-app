@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,11 +71,20 @@ export function HomeHeroSection() {
         {/* 1. Header Navigation Bar */}
         <View className="px-4 sm:px-6 pb-4 pt-2 flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800/80">
           <View className="flex-row items-center gap-2.5 flex-1 mr-2">
-            <View className="w-10 h-10 rounded-xl bg-blue-500/15 dark:bg-blue-600/20 border border-blue-500/30 dark:border-blue-500/40 items-center justify-center shrink-0">
-              <Shield color={isDark ? '#38bdf8' : '#2563eb'} size={22} />
+            <View className="w-10 h-10 rounded-xl bg-white border border-slate-200 shadow-sm items-center justify-center shrink-0 overflow-hidden p-1">
+              <Image 
+                source={require('@/assets/images/tich-surksha-woman.jpg')} 
+                style={{ width: '100%', height: '100%' }} 
+                resizeMode="contain" 
+              />
             </View>
             <View className="shrink">
-              <Text className="text-slate-900 dark:text-white font-black text-base sm:text-lg tracking-tight" numberOfLines={1}>
+              <Text 
+                className="text-slate-900 dark:text-white font-black text-base sm:text-lg tracking-tight" 
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 ढोल - ताशा <Text className="text-blue-600 dark:text-sky-400">महासंघ</Text>
               </Text>
               <Text className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest">
@@ -126,12 +136,19 @@ export function HomeHeroSection() {
           </View>
 
           {/* Main Title */}
-          <Text className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white text-center tracking-tight leading-tight">
-            ढोल - ताशा
-          </Text>
-          <Text className="text-3xl sm:text-5xl font-black text-blue-600 dark:text-sky-400 text-center tracking-tight leading-tight mb-4">
-            महासंघ
-          </Text>
+          <View className="items-center mb-4 px-2">
+            <Text 
+              className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white text-center tracking-tight leading-tight"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              ढोल{"\u00A0"}-{"\u00A0"}ताशा
+            </Text>
+            <Text className="text-3xl sm:text-5xl font-black text-blue-600 dark:text-sky-400 text-center tracking-tight leading-tight">
+              महासंघ
+            </Text>
+          </View>
 
           {/* Subtitle */}
           <Text className="text-slate-600 dark:text-slate-300 text-center text-sm sm:text-base font-medium leading-relaxed max-w-lg mb-6 px-2">

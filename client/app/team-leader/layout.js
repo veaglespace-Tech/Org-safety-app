@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, QrCode, UserCog } from "lucide-react";
+import { LayoutDashboard, UserCog, MailWarning } from "lucide-react";
 import { useSelector } from "react-redux";
 import DashboardNavbar from "@/components/layout/DashboardNavbar";
 import Footer from "@/components/layout/Footer";
@@ -17,8 +17,7 @@ export default function TeamLeaderLayout({ children }) {
 
   const navItems = [
     { name: "Dashboard", href: "/team-leader/dashboard", icon: LayoutDashboard },
-    { name: "Teams", href: "/team-leader/teams", icon: Users },
-    { name: "QR Scanner", href: "/team-leader/scanner", icon: QrCode },
+    { name: "Emergency Emails", href: "/team-leader/emergency-emails", icon: MailWarning },
     { name: "Profile Settings", href: "/team-leader/profile", icon: UserCog },
   ];
 

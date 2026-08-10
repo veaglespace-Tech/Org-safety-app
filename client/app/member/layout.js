@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { LogOut, LayoutDashboard, ShieldAlert, UserCog, Users } from "lucide-react";
+import { LogOut, LayoutDashboard, ShieldAlert, UserCog, MailWarning } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
 import { useRouter, usePathname } from "next/navigation";
@@ -29,9 +29,7 @@ export default function MemberLayout({ children }) {
   const navItems = [
     { name: "Dashboard", href: "/member/dashboard", icon: LayoutDashboard },
     { name: "तिची सुरक्षा", href: "/member/tich-surksha", icon: ShieldAlert },
-    ...(userRole === 'ORG_ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'admin' 
-      ? [{ name: "Users", href: "/member/users", icon: Users }] 
-      : []),
+    { name: "Emergency Emails", href: "/member/emergency-emails", icon: MailWarning },
     { name: "Profile Settings", href: "/member/profile", icon: UserCog },
   ];
 

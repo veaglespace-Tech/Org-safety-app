@@ -87,7 +87,7 @@ export default function AdminDashboard() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Join ${user?.organization?.name || user?.organizations?.name || 'our organization'} on Tichi Suraksha Safety Portal!\nRegister your profile here: ${referralLink}`,
+        message: `Join ${user?.organization?.name || user?.organizations?.name || 'our organization'} on तिची सुरक्षा Safety Portal!\nRegister your profile here: ${referralLink}`,
       });
     } catch (e) {
       console.error(e);

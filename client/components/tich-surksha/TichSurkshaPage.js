@@ -2,8 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useTriggerSosMutation, useUpdateSosLocationMutation, useStopSosMutation } from "@/services/api/authApi";
-import { AlertTriangle, Shield, Phone, MapPin, ArrowLeft, Loader2, CheckCircle2, MessageCircle, Mail, HelpCircle, UserCheck, RefreshCw, ExternalLink, User, Building2, Info } from "lucide-react";
-import Link from "next/link";
+import { AlertTriangle, Shield, Phone, MapPin, Loader2, CheckCircle2, MessageCircle, Mail, RefreshCw, ExternalLink, User, Building2, Info } from "lucide-react";
 import { useSelector } from "react-redux";
 
 export default function TichSurkshaPage() {
@@ -14,6 +13,53 @@ export default function TichSurkshaPage() {
   const [status, setStatus] = useState("idle"); // idle, success, error
   const [isSosActive, setIsSosActive] = useState(false);
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const active = localStorage.getItem('isSosActive') === 'true';
+      if (active) {
+        setIsSosActive(true);
+      }
+    }
+  }, []);
+
+  // Effect to manage SOS interval based on isSosActive state
+  useEffect(() => {
+    if (isSosActive) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      const sosIntervalMinutes = parseInt(process.env.NEXT_PUBLIC_SOS_INTERVAL_MINUTES) || 1;
+      intervalRef.current = setInterval(async () => {
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const liveLoc = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`;
+              try {
+                await updateSosLocation({ locationUrl: liveLoc }).unwrap();
+              } catch (err) {
+                console.error("Failed to send recurring SOS update", err);
+              }
+            },
+            (err) => {
+              console.warn("Could not fetch high accuracy interval location", err);
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+          );
+        }
+      }, sosIntervalMinutes * 60 * 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isSosActive, updateSosLocation]);
   
   const [location, setLocation] = useState(null);
   const [locLoading, setLocLoading] = useState(false);
@@ -23,6 +69,14 @@ export default function TichSurkshaPage() {
   const progressTimerRef = useRef(null);
   
   const { user } = useSelector((state) => state.auth);
+  
+  const [customEmergencyContact, setCustomEmergencyContact] = useState("");
+
+  useEffect(() => {
+    if (user?.emergencyContact) {
+      setCustomEmergencyContact(user.emergencyContact);
+    }
+  }, [user?.emergencyContact]);
 
   const startHold = () => {
     if (isSosActive || isLoading || isStopping) return;
@@ -59,8 +113,6 @@ export default function TichSurkshaPage() {
 
   console.log("USER OBJ IN TICH:", JSON.stringify(user, null, 2));
 
-  const backLink = user?.role === 'admin' ? '/org/dashboard' : '/member/dashboard';
-
   const getLocation = () => {
     setLocLoading(true);
     if (!window.isSecureContext) {
@@ -93,43 +145,22 @@ export default function TichSurkshaPage() {
   // Get location on initial mount
   useEffect(() => {
     getLocation();
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
   }, []);
 
-  const handleSosClick = async () => {
+  const handleSosClick = () => {
     try {
-      setStatus("idle");
+      setStatus("success");
+      setIsSosActive(true);
+      if (typeof window !== "undefined") {
+        localStorage.setItem('isSosActive', 'true');
+      }
+
       let locationUrl = "";
       if (location) {
         locationUrl = `https://maps.google.com/?q=${location.lat},${location.lng}`;
-      } else if ("geolocation" in navigator) {
-        // Fallback if not already loaded, though this might fail in setTimeout without user gesture
-        try {
-          locationUrl = await new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                resolve(`https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`);
-              },
-              (err) => {
-                console.warn("Could not fetch high accuracy location", err);
-                resolve("");
-              },
-              { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-            );
-          });
-        } catch (err) {
-          console.warn("Geolocation fallback failed", err);
-        }
       }
 
-      const res = await triggerSos({ locationUrl }).unwrap();
-      
-      // Also open WhatsApp and Phone Dialer on the user's device directly!
+      // 1. OPEN WHATSAPP AND DIALER IMMEDIATELY (no await before this to prevent popup blockers)
       const distressMessage = `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
 
 👤 Name: ${user?.name || 'Unknown'}
@@ -140,7 +171,7 @@ export default function TichSurkshaPage() {
 📍 LATEST LIVE LOCATION: ${locationUrl || 'Not available'}
 `;
       
-      const emContactStr = user?.emergencyContact ? String(user.emergencyContact) : '';
+      const emContactStr = customEmergencyContact ? String(customEmergencyContact) : (user?.emergencyContact ? String(user.emergencyContact) : '');
       const whatsappNumber = emContactStr ? emContactStr.replace(/\D/g, '') : '';
       if (whatsappNumber) {
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(distressMessage)}`;
@@ -151,46 +182,41 @@ export default function TichSurkshaPage() {
       phoneLink.href = `tel:${user?.emergencyContact || ''}`;
       phoneLink.click();
 
-      setStatus("success");
-      setIsSosActive(true);
-      
-      // Start dynamic minute interval
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      const sosIntervalMinutes = parseInt(process.env.NEXT_PUBLIC_SOS_INTERVAL_MINUTES) || 1;
-      intervalRef.current = setInterval(async () => {
-        if ("geolocation" in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const liveLoc = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`;
-              try {
-                await updateSosLocation({ locationUrl: liveLoc }).unwrap();
-              } catch (err) {
-                console.error("Failed to send recurring SOS update", err);
-              }
-            },
-            (err) => {
-              console.warn("Could not fetch high accuracy interval location", err);
-            },
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-          );
+      // 2. TRIGGER SOS EMAILS IN BACKGROUND (API CALL)
+      (async () => {
+        let apiLocationUrl = locationUrl;
+        if (!apiLocationUrl && "geolocation" in navigator) {
+          try {
+            apiLocationUrl = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (position) => resolve(`https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`),
+                (err) => resolve(""),
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+              );
+            });
+          } catch (err) {}
         }
-      }, sosIntervalMinutes * 60 * 1000);
+        
+        try {
+          await triggerSos({ locationUrl: apiLocationUrl }).unwrap();
+        } catch (error) {
+          console.error("SOS trigger failed", error);
+          setStatus("error");
+        }
+      })();
 
     } catch (error) {
-      console.error("SOS trigger failed", error);
-      console.error("Error string:", String(error));
-      console.error("Error JSON:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      console.error("Error in handleSosClick", error);
       setStatus("error");
     }
   };
 
   const handleStopSos = async () => {
     try {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
       setIsSosActive(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem('isSosActive');
+      }
       setStatus("idle");
       await stopSos().unwrap();
     } catch (err) {
@@ -205,17 +231,15 @@ export default function TichSurkshaPage() {
         
         {/* Left Card: Organization Logo */}
         <div 
-          className="col-span-1 md:order-1 bg-white rounded-3xl flex flex-col shadow-lg border border-slate-200/60 min-h-[140px] md:min-h-[220px] overflow-hidden relative transform hover:-translate-y-1 transition-all duration-300 items-center justify-center p-3 md:p-4"
+          className="col-span-1 md:order-1 bg-white rounded-3xl flex flex-col shadow-lg border border-slate-200/60 min-h-[140px] md:min-h-[220px] overflow-hidden relative transform hover:-translate-y-1 transition-all duration-300"
           style={{ backgroundColor: '#ffffff' }}
         >
           {(user?.organizations?.logo || user?.organization?.logo) ? (
-            <div className="w-full h-full relative flex items-center justify-center">
-              <img 
-                src={user?.organizations?.logo || user?.organization?.logo} 
-                alt="Organization Logo" 
-                className="w-full h-full object-contain max-h-[110px] md:max-h-[180px]"
-              />
-            </div>
+            <img 
+              src={user?.organizations?.logo || user?.organization?.logo} 
+              alt="Organization Logo" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           ) : (
             <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-slate-50 w-full rounded-2xl">
               <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-300 md:w-20 md:h-20">
@@ -267,9 +291,21 @@ export default function TichSurkshaPage() {
         {/* Subtle background glow */}
         <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
-        <div className="flex items-center gap-3 mb-10 text-rose-400">
-          <Shield size={20} />
-          <h2 className="text-sm font-bold tracking-widest uppercase">Emergency SOS Dispatch</h2>
+        <div className="flex items-center justify-between mb-10 text-rose-400">
+          <div className="flex items-center gap-3">
+            <Shield size={20} />
+            <h2 className="text-sm font-bold tracking-widest uppercase">Emergency SOS Dispatch</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase text-slate-500">WhatsApp To:</span>
+            <input 
+              type="text" 
+              value={customEmergencyContact} 
+              onChange={(e) => setCustomEmergencyContact(e.target.value)}
+              placeholder="e.g. 919876543210"
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 dark:text-slate-300 w-36 outline-none focus:border-rose-400"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">

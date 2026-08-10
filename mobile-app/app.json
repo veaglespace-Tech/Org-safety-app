@@ -1,36 +1,39 @@
 {
   "expo": {
-    "name": "mobile-app",
-    "slug": "mobile-app",
+    "name": "तिची सुरक्षा",
+    "slug": "tichi-suraksha",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/tich-surksha-woman.jpg",
     "scheme": "mobileapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/tich-surksha-woman.jpg",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Tichi Suraksha to access your camera to take a photo for your profile and organization logo.",
+        "NSPhotoLibraryUsageDescription": "Allow Tichi Suraksha to access your photos to set your profile and organization logo.",
+        "NSLocationWhenInUseUsageDescription": "Allow Tichi Suraksha to access your location to send accurate SOS alerts to your emergency contacts."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/tich-surksha-woman.jpg"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/tich-surksha-woman.jpg"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/tich-surksha-woman.jpg",
+          "imageWidth": 200
         }
       ]
     ],

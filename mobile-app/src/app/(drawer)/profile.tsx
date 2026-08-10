@@ -21,6 +21,8 @@ import {
   HeartPulse,
   Palette,
   ChevronDown,
+  Plus,
+  Trash2,
 } from 'lucide-react-native';
 
 import { authApi } from '@/services/api/authApi';
@@ -133,13 +135,59 @@ export default function ProfileSettingsPage() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.4, // compress on device
       base64: true,
     });
 
     if (!result.canceled && result.assets?.[0]?.base64) {
-      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      const base64Str = result.assets[0].base64;
+      const estimatedBytes = Math.ceil((base64Str.length * 3) / 4);
+      const estimatedMB = (estimatedBytes / (1024 * 1024)).toFixed(1);
+
+      if (estimatedBytes > 4 * 1024 * 1024) {
+        Alert.alert(
+          'Image Too Large',
+          `Your image is ~${estimatedMB}MB after compression. Please choose a smaller image (under 4MB).`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const base64Image = `data:image/jpeg;base64,${base64Str}`;
       setFormData((prev) => ({ ...prev, profilePhoto: base64Image }));
+    }
+  };
+
+  const pickOrgImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Camera roll permission is needed to update the organization logo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.4, // compress on device
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.base64) {
+      const base64Str = result.assets[0].base64;
+      const estimatedBytes = Math.ceil((base64Str.length * 3) / 4);
+      const estimatedMB = (estimatedBytes / (1024 * 1024)).toFixed(1);
+
+      if (estimatedBytes > 4 * 1024 * 1024) {
+        Alert.alert(
+          'Logo Too Large',
+          `Your image is ~${estimatedMB}MB after compression. Please choose a smaller image (under 4MB).`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const base64Image = `data:image/jpeg;base64,${base64Str}`;
+      setOrgData((prev) => ({ ...prev, logo: base64Image }));
     }
   };
 
@@ -163,6 +211,17 @@ export default function ProfileSettingsPage() {
       };
 
       if (formData.password) {
+        if (formData.password.length < 8) {
+          Alert.alert('Validation Error', 'Password must be at least 8 characters.');
+          return;
+        }
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^~_-])[A-Za-z\d@$!%*?&#^~_-]{8,}$/.test(formData.password)) {
+          Alert.alert(
+            'Weak Password',
+            'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+          );
+          return;
+        }
         payload.password = formData.password;
       }
 
@@ -266,7 +325,7 @@ export default function ProfileSettingsPage() {
                 </Text>
               </View>
             </View>
-            <ThemeToggle variant="pill" className="shrink-0" />
+            <ThemeToggle variant="pill" containerClass="shrink-0" />
           </View>
         </SurfaceCard>
 
@@ -277,10 +336,14 @@ export default function ProfileSettingsPage() {
               <TouchableOpacity
                 onPress={pickProfileImage}
                 activeOpacity={0.8}
-                className="w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 items-center justify-center overflow-hidden relative"
+                className="w-24 h-24 rounded-2xl bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 items-center justify-center overflow-hidden relative"
               >
                 {formData.profilePhoto ? (
-                  <Image source={{ uri: formData.profilePhoto }} style={{ width: 96, height: 96 }} />
+                  <Image
+                    source={{ uri: formData.profilePhoto }}
+                    style={{ width: 96, height: 96 }}
+                    resizeMode="cover"
+                  />
                 ) : (
                   <User size={40} color={isDark ? '#94a3b8' : '#64748b'} />
                 )}
@@ -319,7 +382,7 @@ export default function ProfileSettingsPage() {
             <TextInput
               label="Emergency Contact"
               value={formData.emergencyContact}
-              onChangeText={(t) => setFormData((p) => ({ ...p, emergencyContact: t }))}
+              onChangeText={(t) => setFormData((p) => ({ ...p, emergencyContact: t.replace(/\D/g, '') }))}
               keyboardType="phone-pad"
               leftIcon={<HeartPulse size={16} color="#ef4444" />}
               helpText="This number is automatically alerted when you trigger SOS."
@@ -399,16 +462,30 @@ export default function ProfileSettingsPage() {
           </SurfaceCard>
         ) : (
           <SurfaceCard className="p-5">
-            <View className="flex-row items-center gap-3 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <View className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 items-center justify-center border border-indigo-100 dark:border-indigo-900/40">
-                <Building2 size={24} color="#6366f1" />
-              </View>
-              <View>
-                <Text className="text-lg font-black text-slate-900 dark:text-white">Organization Settings</Text>
-                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  Update primary registration details
-                </Text>
-              </View>
+            {/* Org Logo Selection */}
+            <View className="items-center mb-6">
+              <TouchableOpacity
+                onPress={pickOrgImage}
+                activeOpacity={0.8}
+                className="w-24 h-24 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border-2 border-indigo-100 dark:border-indigo-900/40 items-center justify-center overflow-hidden relative"
+              >
+                {orgData.logo ? (
+                  <Image source={{ uri: orgData.logo }} style={{ width: 96, height: 96 }} />
+                ) : (
+                  <Building2 size={40} color="#6366f1" />
+                )}
+                <View className="absolute bottom-0 w-full bg-black/50 py-1 items-center">
+                  <Camera size={14} color="#fff" />
+                </View>
+              </TouchableOpacity>
+              <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-2">Tap to change logo</Text>
+            </View>
+
+            <View className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <Text className="text-lg font-black text-slate-900 dark:text-white text-center">Organization Settings</Text>
+              <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 text-center">
+                Update primary registration details
+              </Text>
             </View>
 
             <TextInput

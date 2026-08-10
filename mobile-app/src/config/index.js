@@ -47,19 +47,20 @@ export const getLocalApiUrl = () => {
 };
 
 const resolveBaseUrl = () => {
-  // If running in browser on web dev server (e.g. localhost:8081), use local proxy to bypass browser CORS
-  if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      const isLocalhost =
-        window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1';
-      if (isLocalhost) {
-        return `${window.location.origin}/api`;
-      }
+  // On Web: if running from localhost/127.0.0.1, always use Local API
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const hostname = window.location?.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `http://localhost:${DEFAULT_PORT}/api`;
     }
   }
 
-  // If production URL or specific API URL is explicitly configured
+  // On Mobile (Expo Go / simulator): use dynamic host detection in __DEV__
+  if (__DEV__ && Platform.OS !== 'web') {
+    return getLocalApiUrl();
+  }
+
+  // Next, respect explicit environment variables if provided
   const explicitUrl =
     process.env.EXPO_PUBLIC_API_URL_PROD ||
     process.env.EXPO_PUBLIC_API_URL ||
@@ -69,7 +70,7 @@ const resolveBaseUrl = () => {
     return trimTrailingSlash(explicitUrl);
   }
 
-  // Default to live backend URL
+  // Default to live backend URL in Production
   return LIVE_API_URL;
 };
 

@@ -33,11 +33,11 @@ export function SurfaceCard({
       className={`rounded-3xl p-5 ${getVariantStyles()} ${className}`}
       style={[
         {
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 12,
-          elevation: 2,
+          shadowColor: variant === 'glow' ? '#3b82f6' : '#0f172a', // brand-blue or brand-ink
+          shadowOffset: { width: 0, height: variant === 'glow' ? 8 : 6 },
+          shadowOpacity: variant === 'glow' ? 0.15 : 0.08,
+          shadowRadius: variant === 'glow' ? 24 : 16,
+          elevation: variant === 'glow' ? 8 : 4,
         },
         style,
       ]}

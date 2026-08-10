@@ -2,14 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+@layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
+    --border: 212 222 234;
+
+    --brand-cyan: 191 219 254;
+    --brand-sky: 96 165 250;
+    --brand-blue: 37 99 235;
+    --brand-royal: 29 78 216;
+    --brand-deep: 15 23 42;
+    --brand-ink: 15 23 42;
+    --brand-surface: 255 255 255;
+    --brand-surface-soft: 244 247 251;
+    --brand-line: 215 223 234;
+  }
+
+  .dark {
+    --background: 3 7 18;
+    --foreground: 226 232 240;
+    --primary: 96 165 250;
+    --primary-foreground: 15 23 42;
+    --border: 41 56 78;
+
+    --brand-cyan: 147 197 253;
+    --brand-sky: 96 165 250;
+    --brand-blue: 59 130 246;
+    --brand-royal: 37 99 235;
+    --brand-deep: 11 18 32;
+    --brand-ink: 3 7 18;
+    --brand-surface: 12 19 33;
+    --brand-surface-soft: 17 26 44;
+    --brand-line: 49 64 87;
+  }
 }
 
 html,
@@ -19,23 +48,5 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Modern subtle scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45);
+  background-color: rgb(var(--background));
 }
