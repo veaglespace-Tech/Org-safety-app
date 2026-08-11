@@ -52,20 +52,56 @@ const resolveBaseUrl = () => {
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_LIVE_API_URL;
 
-  // On Web: if running from localhost/127.0.0.1 during local development
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const hostname = window.location?.hostname;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      // If explicit URL targets local backend (e.g. http://localhost:5001/api), use it directly
-      if (explicitUrl && (explicitUrl.includes('localhost') || explicitUrl.includes('127.0.0.1'))) {
-        return trimTrailingSlash(explicitUrl);
+  // In standalone / production builds (e.g., APK build), default directly to the live server
+  if (typeof __DEV__ !== 'undefined' && !__DEV__) {
+    return LIVE_API_URL;
+  }
+
+  const rawEnvUrl = process.env.EXPO_PUBLIC_LOCAL_API_URL || process.env.EXPO_PUBLIC_API_URL;
+  let configuredUrl = trimTrailingSlash(rawEnvUrl);
+
+  // If on web
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location?.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        if (explicitUrl && (explicitUrl.includes('localhost') || explicitUrl.includes('127.0.0.1'))) {
+          return trimTrailingSlash(explicitUrl);
+        }
+        if (process.env.EXPO_PUBLIC_FORCE_DIRECT_API === 'true' && explicitUrl) {
+          return trimTrailingSlash(explicitUrl);
+        }
+        return `${window.location.origin}/api`;
       }
-      // If user explicitly forced direct API calls to remote server
-      if (process.env.EXPO_PUBLIC_FORCE_DIRECT_API === 'true' && explicitUrl) {
-        return trimTrailingSlash(explicitUrl);
+    }
+    
+    if (configuredUrl && configuredUrl.includes('10.0.2.2')) {
+      const webHost = (typeof window !== 'undefined' && window.location?.hostname) || 'localhost';
+      return configuredUrl.replace('10.0.2.2', webHost);
+    }
+    return configuredUrl || getLocalApiUrl();
+  }
+
+  // If running on a physical phone via Expo Go, ensure we use the actual LAN IP
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    Constants.manifest?.debuggerHost ||
+    Constants.manifest2?.extra?.expoGo?.debuggerHost;
+
+  if (hostUri) {
+    const lanHost = hostUri.split(':')[0];
+    if (lanHost && lanHost !== 'localhost' && lanHost !== '127.0.0.1') {
+      if (
+        configuredUrl &&
+        (configuredUrl.includes('10.0.2.2') ||
+          configuredUrl.includes('localhost') ||
+          configuredUrl.includes('127.0.0.1'))
+      ) {
+        return configuredUrl
+          .replace('10.0.2.2', lanHost)
+          .replace('localhost', lanHost)
+          .replace('127.0.0.1', lanHost);
       }
-      // Use Metro dev proxy (/api) to transparently proxy requests to live API without CORS errors
-      return `${window.location.origin}/api`;
     }
   }
 
@@ -78,8 +114,7 @@ const resolveBaseUrl = () => {
     return getLocalApiUrl();
   }
 
-  // Default to live backend URL in Production
-  return LIVE_API_URL;
+  return configuredUrl || LIVE_API_URL;
 };
 
 export const API_BASE_URL = resolveBaseUrl();

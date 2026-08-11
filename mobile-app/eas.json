@@ -18,15 +18,25 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL_PROD": "https://tichisuraksha.veaglespace.com/api",
+        "EXPO_PUBLIC_LIVE_API_URL": "https://tichisuraksha.veaglespace.com/api",
+        "EXPO_PUBLIC_CLIENT_BASE_URL": "https://tichisuraksha.veaglespace.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
       "ios": {
         "credentialsSource": "remote"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL_PROD": "https://tichisuraksha.veaglespace.com/api",
+        "EXPO_PUBLIC_LIVE_API_URL": "https://tichisuraksha.veaglespace.com/api",
+        "EXPO_PUBLIC_CLIENT_BASE_URL": "https://tichisuraksha.veaglespace.com"
       }
     }
   },
