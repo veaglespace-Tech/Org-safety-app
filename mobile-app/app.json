@@ -22,7 +22,12 @@
         "NSLocationAlwaysUsageDescription": "तिची सुरक्षा needs continuous location access during an active SOS emergency to keep sending updated GPS coordinates to emergency contacts every 2 minutes.",
         "NSMicrophoneUsageDescription": "तिची सुरक्षा may need microphone access for future voice-based emergency features.",
         "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "whatsapp",
+          "tel",
+          "mailto"
+        ]
       }
     },
     "android": {

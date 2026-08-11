@@ -29,7 +29,7 @@ export function AppFooter() {
         <Text className="text-[13px] sm:text-[14px] font-bold text-white tracking-wide text-center">
           Powered By –{' '}
           <Text className="text-[#38BDF8] underline font-bold">
-            "शिवमुद्रा ढोल ताशा पथक,पुणे"
+            &quot;शिवमुद्रा ढोल ताशा पथक,पुणे&quot;
           </Text>
         </Text>
       </TouchableOpacity>

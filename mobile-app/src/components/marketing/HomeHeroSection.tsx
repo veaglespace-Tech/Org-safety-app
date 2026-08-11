@@ -153,7 +153,7 @@ export function HomeHeroSection() {
 
           {/* Subtitle */}
           <Text className="text-slate-600 dark:text-slate-300 text-center text-sm sm:text-base font-medium leading-relaxed max-w-lg mb-6 px-2">
-            <Text className="text-rose-600 dark:text-rose-400 font-extrabold">'तिची सुरक्षा'</Text> द्वारे महिलांच्या सुरक्षिततेसाठी अटूट बांधिलकीसह आपल्या महासंघाला सक्षम करणे.
+            <Text className="text-rose-600 dark:text-rose-400 font-extrabold">&apos;तिची सुरक्षा&apos;</Text> द्वारे महिलांच्या सुरक्षिततेसाठी अटूट बांधिलकीसह आपल्या महासंघाला सक्षम करणे.
           </Text>
 
           {/* Primary CTA Buttons */}

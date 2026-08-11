@@ -62,7 +62,7 @@ export default function SOSScreen() {
   const progressTimerRef = useRef<any>(null);
   const trackingIntervalRef = useRef<any>(null);
   const holdCompletedRef = useRef<boolean>(false);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(1));
 
   const HOLD_DURATION = 3000; // 3.0 Seconds Hold Required
   const INTERVAL_STEP = 50;
@@ -97,7 +97,9 @@ export default function SOSScreen() {
   };
 
   useEffect(() => {
-    fetchLocation();
+    const timer = setTimeout(() => {
+      fetchLocation();
+    }, 0);
 
     // Subtle pulse animation
     Animated.loop(
@@ -119,8 +121,9 @@ export default function SOSScreen() {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+      clearTimeout(timer);
     };
-  }, []);
+  }, [pulseAnim]);
 
   // Hold Start / Cancel Handlers
   const startHold = () => {
@@ -130,10 +133,10 @@ export default function SOSScreen() {
     setHoldProgress(0);
     holdCompletedRef.current = false;
 
-    const startTime = Date.now();
+    const startTime = new Date().getTime();
 
     progressTimerRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
+      const elapsed = new Date().getTime() - startTime;
       const progress = Math.min((elapsed / HOLD_DURATION) * 100, 100);
       setHoldProgress(progress);
     }, INTERVAL_STEP);
@@ -587,13 +590,13 @@ ${locUrl || 'Location coordinates not available'}
               <TouchableOpacity
                 onPress={handleEmailAdmin}
                 activeOpacity={0.8}
-                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-blue-500/40 bg-blue-500/10 active:bg-blue-500/20"
+                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 active:bg-indigo-500/20"
               >
-                <Mail size={20} color="#3b82f6" />
-                <Text className="text-blue-600 dark:text-blue-400 font-black text-xs mt-1.5 text-center">
+                <Mail size={20} color="#6366f1" />
+                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-xs mt-1.5 text-center">
                   EMAIL
                 </Text>
-                <Text className="text-blue-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                <Text className="text-indigo-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
                   ALERT ADMIN
                 </Text>
               </TouchableOpacity>
