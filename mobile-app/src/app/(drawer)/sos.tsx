@@ -197,12 +197,17 @@ export default function SOSScreen() {
       Linking.canOpenURL(waNativeUrl)
         .then((supported) => {
           if (supported) {
-            return Linking.openURL(waNativeUrl);
+            Linking.openURL(waNativeUrl).catch((err) => console.warn('Could not open WhatsApp:', err));
           } else {
-            return Linking.openURL(waWebUrl);
+            Linking.openURL(waWebUrl).catch((err) => console.warn('Could not open WhatsApp Web:', err));
           }
         })
         .catch((err) => console.warn('Could not open WhatsApp:', err));
+        
+      // Open the phone dialer for 112 after a brief delay
+      setTimeout(() => {
+        Linking.openURL('tel:112').catch((err) => console.warn('Could not open Dialer:', err));
+      }, 1500);
     }
   };
 
