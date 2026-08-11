@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppTheme } from '@/context/ThemeContext';
+import { AppFooter } from '@/components/layout/Footer';
 
 export default function RegisterIndex() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function RegisterIndex() {
     <SafeAreaView className="flex-1 bg-slate-50 dark:bg-slate-950">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        className="px-6 pt-8 pb-8"
+        className="px-6 pt-10 pb-2"
         showsVerticalScrollIndicator={false}
       >
       {/* Top Header Actions */}
@@ -101,7 +102,7 @@ export default function RegisterIndex() {
         </TouchableOpacity>
       </View>
 
-      <View className="mt-10 items-center flex-row justify-center">
+      <View className="mt-8 items-center flex-row justify-center">
         <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold">
           Already have an account?{' '}
         </Text>
@@ -110,6 +111,10 @@ export default function RegisterIndex() {
             Sign in here
           </Text>
         </TouchableOpacity>
+      </View>
+
+      <View className="mt-8">
+        <AppFooter />
       </View>
     </ScrollView>
     </SafeAreaView>

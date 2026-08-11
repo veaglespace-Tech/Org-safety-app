@@ -35,6 +35,7 @@ import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AppFooter } from '@/components/layout/Footer';
 import { useAppTheme } from '@/context/ThemeContext';
 import {
   useJoinOrganizationMutation,
@@ -263,7 +264,7 @@ export default function RegisterUserScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
           className="px-5 pt-8"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -645,18 +646,21 @@ export default function RegisterUserScreen() {
           />
         </SurfaceCard>
 
-        {/* Submit Button */}
         <Button
           onPress={handleSubmit(onSubmit)}
           isLoading={isSubmitting}
           size="lg"
-          className="bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/30 mb-8"
+          className="bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/30"
         >
           <View className="flex-row items-center justify-center gap-2">
             <Text className="text-white font-extrabold text-base">Complete Member Setup</Text>
             <ArrowRight size={18} color="#fff" />
           </View>
         </Button>
+
+        <View className="mt-8 mb-4">
+          <AppFooter />
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

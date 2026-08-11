@@ -324,7 +324,6 @@ export default function TichSurkshaPage() {
                 onTouchStart={!isSosActive ? startHold : undefined}
                 onTouchEnd={!isSosActive ? cancelHold : undefined}
                 onClick={isSosActive ? handleStopSos : undefined}
-                disabled={isLoading || isStopping}
                 className={`relative z-10 w-48 h-48 md:w-56 md:h-56 rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
                   isSosActive
                     ? "bg-black border-4 border-rose-600 hover:bg-slate-900 shadow-[0_0_50px_rgba(225,29,72,0.6)] animate-pulse" 
@@ -342,11 +341,13 @@ export default function TichSurkshaPage() {
                 )}
                 
                 <div className="relative z-10 flex flex-col items-center justify-center">
-                  {isLoading || isStopping ? (
-                    <Loader2 size={48} className="text-white animate-spin" />
-                  ) : isSosActive ? (
+                  {isSosActive ? (
                     <>
-                      <CheckCircle2 size={48} className="text-rose-500" />
+                      {isLoading || isStopping ? (
+                        <Loader2 size={48} className="text-white animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={48} className="text-rose-500" />
+                      )}
                       <span className="text-white font-black text-2xl tracking-widest leading-none mt-2">STOP SOS</span>
                       <span className="text-rose-400 text-xs font-bold tracking-widest uppercase mt-1">CANCEL ALERT</span>
                     </>
@@ -357,7 +358,7 @@ export default function TichSurkshaPage() {
                         {isHolding ? "HOLD..." : "PRESS SOS"}
                       </span>
                       <span className={`${isHolding ? "text-emerald-200" : "text-emerald-100"} text-xs font-bold tracking-widest uppercase mt-1`}>
-                        {isHolding ? `${Math.round(holdProgress)}%` : "Hold for 3s to alert"}
+                        {isHolding ? "KEEP HOLDING" : "Hold for 3s to alert"}
                       </span>
                     </>
                   )}

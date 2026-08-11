@@ -48,7 +48,7 @@ function CustomDrawerContent(props: any) {
       color: '#3b82f6',
     },
     {
-      label: 'तिची सुरक्षा',
+      label: 'तिची\u00A0सुरक्षा',
       route: '/(drawer)/sos',
       icon: Shield,
       color: '#ef4444',
@@ -175,7 +175,7 @@ function CustomDrawerContent(props: any) {
                 if (typeof (props.navigation?.closeDrawer) === 'function') {
                   props.navigation.closeDrawer();
                 }
-                router.push(item.route as any);
+                router.navigate(item.route as any);
               }}
               className={`flex-row items-center gap-3.5 mx-3 my-1 px-4 py-3.5 rounded-2xl ${
                 isActive
@@ -253,7 +253,7 @@ export default function DrawerLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
@@ -311,7 +311,19 @@ export default function DrawerLayout() {
         <Drawer.Screen
           name="sos"
           options={{
-            headerTitle: 'तिची सुरक्षा',
+            headerTitle: () => (
+              <View className="flex-row items-center gap-2" style={{ minWidth: 250, flex: 1 }}>
+                <Shield color="#ef4444" size={20} />
+                <Text
+                  className={`font-extrabold text-lg ${
+                    isDark ? 'text-white' : 'text-slate-900'
+                  }`}
+                  style={{ flexShrink: 0 }}
+                >
+                  तिची{'\u00A0'}सुरक्षा
+                </Text>
+              </View>
+            ),
             drawerItemStyle: { display: 'none' },
           }}
         />
@@ -330,6 +342,6 @@ export default function DrawerLayout() {
           }}
         />
       </Drawer>
-    </GestureHandlerRootView>
+    </>
   );
 }

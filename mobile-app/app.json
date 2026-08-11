@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "tichisuraksha",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
       "buildNumber": "1",
@@ -22,10 +21,10 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "तिची सुरक्षा needs background location access to continuously update your GPS position during an active SOS emergency, ensuring your contacts can track your safety in real time.",
         "NSLocationAlwaysUsageDescription": "तिची सुरक्षा needs continuous location access during an active SOS emergency to keep sending updated GPS coordinates to emergency contacts every 2 minutes.",
         "NSMicrophoneUsageDescription": "तिची सुरक्षा may need microphone access for future voice-based emergency features.",
-        "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly."
+        "NSContactsUsageDescription": "तिची सुरक्षा may access your contacts to help you select emergency contact numbers quickly.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
       "versionCode": 1,
@@ -47,15 +46,14 @@
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/icon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -86,12 +84,10 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {
@@ -100,4 +96,3 @@
     }
   }
 }
-

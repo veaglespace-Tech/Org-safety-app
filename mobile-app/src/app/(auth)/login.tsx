@@ -16,6 +16,7 @@ import { normalizeEmailInput } from '../../utils/formValidation';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { ArrowLeft } from 'lucide-react-native';
 import { useAppTheme } from '../../context/ThemeContext';
+import { AppFooter } from '../../components/layout/Footer';
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
@@ -99,7 +100,7 @@ export default function LoginScreen() {
       >
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
-          className="px-6 pt-10 pb-8"
+          className="px-6 pt-10 pb-2"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -196,6 +197,10 @@ export default function LoginScreen() {
           <TouchableOpacity onPress={() => router.push('/(auth)/register' as any)}>
             <Text className="text-blue-600 dark:text-blue-400 font-bold underline">Create your organization</Text>
           </TouchableOpacity>
+        </View>
+
+        <View className="mt-6">
+          <AppFooter />
         </View>
       </View>
     </ScrollView>

@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Pressable,
   Image,
   Animated,
   Linking,
@@ -300,10 +299,7 @@ ${locUrl || 'Location coordinates not available'}
 
   // Direct Channel Handlers
   const handleCallEmergency = () => {
-    const parentOrEmergency = user?.emergencyContact || user?.emergency_contact;
-    const parentNumberStr = parentOrEmergency ? String(parentOrEmergency).replace(/\D/g, '') : '';
-    const numberToCall = parentNumberStr || '112';
-    Linking.openURL(`tel:${numberToCall}`);
+    Linking.openURL(`tel:112`);
   };
 
   const handleWhatsApp = () => {
@@ -344,7 +340,7 @@ ${locUrl || 'Location coordinates not available'}
   return (
     <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950 w-full"
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Top 3 Header Cards Row */}
@@ -448,72 +444,60 @@ ${locUrl || 'Location coordinates not available'}
                 }}
               />
 
-              {/* Main SOS Touch Button (Requires 3-second hold to trigger) */}
-              <Pressable
-                onPressIn={!isSosActive ? startHold : undefined}
-                onPressOut={!isSosActive ? cancelHold : undefined}
-                onPress={() => {
-                  if (isSosActive) {
-                    handleStopSos();
-                  } else {
-                    // Tap does not trigger - show prompt to hold for 3 seconds
-                    setTapWarning('Hold for 3 full seconds to activate SOS.');
-                  }
-                }}
-                disabled={isTriggering || isStopping}
-                className={`w-40 h-40 rounded-full items-center justify-center shadow-2xl relative overflow-hidden ${
-                  isSosActive
-                    ? 'bg-slate-950 border-4 border-rose-600'
-                    : isHolding
-                    ? 'bg-emerald-600'
-                    : 'bg-emerald-500'
-                }`}
-                style={({ pressed }) => ({
-                  transform: [{ scale: pressed ? 0.95 : 1 }],
-                })}
-              >
-                {/* Hold Progress Bar Fill */}
-                {!isSosActive && isHolding && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: `${holdProgress}%`,
-                      backgroundColor: '#065f46',
-                    }}
-                  />
-                )}
-
-                <View className="items-center justify-center relative z-10 px-2">
-                  {isTriggering || isStopping ? (
-                    <ActivityIndicator size="large" color="#ffffff" />
-                  ) : isSosActive ? (
-                    <>
+              {/* Main SOS Touch Button (Split for reliable Android rendering) */}
+              {isSosActive ? (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={handleStopSos}
+                  className="w-40 h-40 rounded-full items-center justify-center overflow-hidden bg-slate-950 border-4 border-rose-600"
+                >
+                  <View className="items-center justify-center px-2 w-full h-full">
+                    {isTriggering || isStopping ? (
+                      <ActivityIndicator size="large" color="#ffffff" />
+                    ) : (
                       <CheckCircle2 size={32} color="#f43f5e" />
-                      <Text className="text-white font-black text-lg tracking-widest mt-1">
-                        STOP SOS
-                      </Text>
-                      <Text className="text-rose-400 text-[9px] font-black uppercase tracking-wider mt-0.5">
-                        CANCEL ALERT
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle size={30} color="#ffffff" />
-                      <Text className="text-white font-black text-lg tracking-widest mt-1 text-center">
-                        {isHolding ? 'HOLDING...' : 'HOLD SOS'}
-                      </Text>
-                      <Text className="text-emerald-100 text-[9px] font-black tracking-wider uppercase mt-0.5 text-center">
-                        {isHolding
-                          ? `${Math.round(holdProgress)}% (${((holdProgress / 100) * 3).toFixed(1)}s)`
-                          : 'HOLD 3 SECONDS'}
-                      </Text>
-                    </>
+                    )}
+                    <Text className="text-white font-black text-lg tracking-widest mt-1">
+                      STOP SOS
+                    </Text>
+                    <Text className="text-rose-400 text-[9px] font-black uppercase tracking-wider mt-0.5 text-center">
+                      CANCEL ALERT
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPressIn={startHold}
+                  onPressOut={cancelHold}
+                  onPress={() => setTapWarning('Hold for 3 full seconds to activate SOS.')}
+                  className={`w-40 h-40 rounded-full items-center justify-center overflow-hidden ${
+                    isHolding ? 'bg-emerald-600' : 'bg-emerald-500'
+                  }`}
+                >
+                  {isHolding && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${holdProgress}%`,
+                        backgroundColor: '#065f46',
+                      }}
+                    />
                   )}
-                </View>
-              </Pressable>
+                  <View className="items-center justify-center px-2 w-full h-full" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 }}>
+                    <AlertTriangle size={30} color="#ffffff" />
+                    <Text className="text-white font-black text-lg tracking-widest mt-1 text-center">
+                      {isHolding ? 'HOLDING...' : 'HOLD SOS'}
+                    </Text>
+                    <Text className="text-emerald-100 text-[9px] font-black tracking-wider uppercase mt-0.5 text-center">
+                      {isHolding ? 'KEEP HOLDING' : 'HOLD 3 SECONDS'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Instruction / Status Subtext */}
@@ -557,7 +541,7 @@ ${locUrl || 'Location coordinates not available'}
             </View>
 
             <View className="flex-row gap-2">
-              {/* Call Parent / Emergency Contact */}
+              {/* Call Emergency Services */}
               <TouchableOpacity
                 onPress={handleCallEmergency}
                 activeOpacity={0.8}
@@ -565,10 +549,10 @@ ${locUrl || 'Location coordinates not available'}
               >
                 <Phone size={20} color="#f43f5e" />
                 <Text className="text-rose-600 dark:text-rose-400 font-black text-xs mt-1.5 text-center">
-                  CALL
+                  CALL 112
                 </Text>
                 <Text className="text-rose-500/80 text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
-                  {user?.emergencyContact || user?.emergency_contact || '112 POLICE'}
+                  EMERGENCY
                 </Text>
               </TouchableOpacity>
 

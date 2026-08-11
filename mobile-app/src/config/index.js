@@ -47,22 +47,30 @@ export const getLocalApiUrl = () => {
 };
 
 const resolveBaseUrl = () => {
-  // Always respect explicit environment variables first (dev & prod)
   const explicitUrl =
     process.env.EXPO_PUBLIC_API_URL_PROD ||
     process.env.EXPO_PUBLIC_API_URL ||
     process.env.EXPO_PUBLIC_LIVE_API_URL;
 
-  if (explicitUrl) {
-    return trimTrailingSlash(explicitUrl);
-  }
-
-  // On Web: if running from localhost/127.0.0.1, use Local API
+  // On Web: if running from localhost/127.0.0.1 during local development
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const hostname = window.location?.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `http://localhost:${DEFAULT_PORT}/api`;
+      // If explicit URL targets local backend (e.g. http://localhost:5001/api), use it directly
+      if (explicitUrl && (explicitUrl.includes('localhost') || explicitUrl.includes('127.0.0.1'))) {
+        return trimTrailingSlash(explicitUrl);
+      }
+      // If user explicitly forced direct API calls to remote server
+      if (process.env.EXPO_PUBLIC_FORCE_DIRECT_API === 'true' && explicitUrl) {
+        return trimTrailingSlash(explicitUrl);
+      }
+      // Use Metro dev proxy (/api) to transparently proxy requests to live API without CORS errors
+      return `${window.location.origin}/api`;
     }
+  }
+
+  if (explicitUrl) {
+    return trimTrailingSlash(explicitUrl);
   }
 
   // On Mobile (Expo Go / simulator) with no env var: use dynamic host detection

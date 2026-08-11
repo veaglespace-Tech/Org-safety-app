@@ -29,6 +29,7 @@ import { useAuthSession } from '@/hooks/useAuthSession';
 import { resolveDashboardPath } from '@/utils/roles';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppTheme } from '@/context/ThemeContext';
+import { AppFooter } from '@/components/layout/Footer';
 
 export function HomeHeroSection() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export function HomeHeroSection() {
         className="flex-1 w-full"
         contentContainerStyle={{
           paddingTop: Math.max(insets.top, 12),
-          paddingBottom: Math.max(insets.bottom, 24) + 40,
+          paddingBottom: Math.max(insets.bottom, 12),
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -416,27 +417,8 @@ export function HomeHeroSection() {
         </View>
 
         {/* 6. Footer */}
-        <View className="px-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/80 items-center">
-          <Text className="text-slate-600 dark:text-slate-400 font-bold text-xs text-center mb-1">
-            ढोल - ताशा महासंघ © 2026
-          </Text>
-          <Text className="text-slate-500 text-[10px] text-center font-medium">
-            'तिची सुरक्षा' - Women Safety & Emergency SOS Portal
-          </Text>
-
-          <View className="flex-row flex-wrap items-center justify-center gap-3 mt-4">
-            <TouchableOpacity onPress={() => router.push('/(auth)/login' as any)}>
-              <Text className="text-slate-600 dark:text-slate-400 font-semibold text-xs">Sign In</Text>
-            </TouchableOpacity>
-            <Text className="text-slate-400 dark:text-slate-700">•</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register' as any)}>
-              <Text className="text-slate-600 dark:text-slate-400 font-semibold text-xs">Create Account</Text>
-            </TouchableOpacity>
-            <Text className="text-slate-400 dark:text-slate-700">•</Text>
-            <TouchableOpacity onPress={() => router.push('/(drawer)/sos' as any)}>
-              <Text className="text-rose-600 dark:text-rose-400 font-semibold text-xs">Emergency SOS</Text>
-            </TouchableOpacity>
-          </View>
+        <View className="mt-8 px-4">
+          <AppFooter />
         </View>
       </ScrollView>
     </View>

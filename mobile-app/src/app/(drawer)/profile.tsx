@@ -32,6 +32,7 @@ import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { TextInput } from '@/components/ui/TextInput';
 import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
 import { ActionModal } from '@/components/ui/ActionModal';
+import { AppFooter } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { ROLES } from '@/utils/roles';
 import { useAppTheme } from '@/context/ThemeContext';
@@ -306,7 +307,7 @@ export default function ProfileSettingsPage() {
 
       <ScrollView
         className="flex-1 px-5 pt-4"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Appearance Card */}
@@ -533,6 +534,10 @@ export default function ProfileSettingsPage() {
             </Button>
           </SurfaceCard>
         )}
+        
+        <View className="mt-auto">
+          <AppFooter />
+        </View>
       </ScrollView>
 
       {/* Blood Group Modal */}

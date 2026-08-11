@@ -13,19 +13,23 @@ import { loadSession } from '@/store/slices/authSlice';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+function ThemeAwareStatusBar() {
+  const { isDark } = useAppTheme();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
+}
 
 function AppNavigation() {
-  const { isDark } = useAppTheme();
-
   return (
-    <View className={isDark ? 'dark flex-1' : 'flex-1'} style={{ flex: 1, backgroundColor: isDark ? '#020617' : '#f8fafc' }}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+    <>
+      <ThemeAwareStatusBar />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
       </Stack>
-    </View>
+    </>
   );
 }
 
@@ -38,7 +42,9 @@ export default function RootLayout() {
     <Provider store={store}>
       <ThemeProvider>
         <SafeAreaProvider>
-          <AppNavigation />
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <AppNavigation />
+          </GestureHandlerRootView>
         </SafeAreaProvider>
       </ThemeProvider>
     </Provider>

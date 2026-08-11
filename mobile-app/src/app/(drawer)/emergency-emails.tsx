@@ -21,6 +21,7 @@ import {
 } from '@/services/api/orgApi';
 import { useAppTheme } from '@/context/ThemeContext';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
+import { AppFooter } from '@/components/layout/Footer';
 
 export default function EmergencyEmailsScreen() {
   const { isDark } = useAppTheme();
@@ -77,7 +78,7 @@ export default function EmergencyEmailsScreen() {
   return (
     <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950"
-      contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 32 }}
+      contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 10 }}
       keyboardShouldPersistTaps="handled"
     >
       <SurfaceCard className="p-5 mb-6">
@@ -184,6 +185,10 @@ export default function EmergencyEmailsScreen() {
           </View>
         )}
       </SurfaceCard>
+      
+      <View className="px-4 mt-auto">
+        <AppFooter />
+      </View>
     </ScrollView>
   );
 }

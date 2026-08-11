@@ -67,7 +67,7 @@ export default function MemberDashboard() {
   return (
     <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950"
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
       showsVerticalScrollIndicator={false}
     >
       {/* 1. Member Profile & Organization Banner */}

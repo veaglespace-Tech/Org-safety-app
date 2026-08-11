@@ -37,6 +37,7 @@ import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { AppFooter } from '@/components/layout/Footer';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useRegisterOrganizationMutation } from '@/services/api/authApi';
 import { useGetPlansQuery } from '@/services/api/planApi';
@@ -330,7 +331,7 @@ export default function RegisterOrganisationScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
           className="px-5 pt-8"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -838,7 +839,6 @@ export default function RegisterOrganisationScreen() {
               </View>
             </SurfaceCard>
 
-            {/* Final Submit Button */}
             <Button
               onPress={handleFinalSubmit}
               isLoading={isSubmitting}
@@ -854,6 +854,10 @@ export default function RegisterOrganisationScreen() {
             </Button>
           </View>
         )}
+
+        <View className="mt-8">
+          <AppFooter />
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

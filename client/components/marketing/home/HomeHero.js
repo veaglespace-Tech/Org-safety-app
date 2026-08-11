@@ -4,7 +4,7 @@ import SectionEyebrow from "@/components/ui/SectionEyebrow";
 
 export default function HomeHero() {
   return (
-    <section className="theme-hero-mesh relative overflow-hidden px-3 pb-16 pt-20 sm:px-4 sm:pb-20 sm:pt-24 md:px-0 md:pb-32 md:pt-36 lg:pt-40">
+    <section className="theme-hero-mesh relative overflow-hidden px-3 pb-8 pt-20 sm:px-4 sm:pb-10 sm:pt-24 md:px-0 md:pb-12 md:pt-36 lg:pt-40">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-10 top-1/4 h-72 w-72 animate-pulse rounded-full bg-cyan-300/20 blur-[110px] dark:bg-cyan-300/14 md:h-[520px] md:w-[520px] md:blur-[160px]" />
         <div className="absolute -right-10 bottom-1/4 h-72 w-72 animate-pulse rounded-full bg-blue-500/20 blur-[110px] delay-700 dark:bg-blue-400/18 md:h-[500px] md:w-[500px] md:blur-[160px]" />
