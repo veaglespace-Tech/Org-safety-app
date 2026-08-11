@@ -183,20 +183,27 @@ export default function SOSScreen() {
     );
   };
 
-  // Direct Emergency Channels Dispatch (WhatsApp + Phone Call)
+  // Direct Emergency Channels Dispatch (WhatsApp)
   const triggerDirectEmergencyChannels = (locUrl: string) => {
     const message = buildWhatsAppMessage(locUrl);
 
     // 1. WhatsApp Share (Opens contact selector to allow multi-select)
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    Linking.openURL(waUrl).catch((err) => console.warn('Could not open WhatsApp:', err));
+    const waNativeUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+    const waWebUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
-    // 2. Phone Call - Strictly to 112 (Police/Emergency)
-    setTimeout(() => {
-      Linking.openURL(`tel:112`).catch((err) =>
-        console.warn('Could not open phone dialer:', err)
-      );
-    }, 500);
+    if (Platform.OS === 'web') {
+      Linking.openURL(waWebUrl).catch((err) => console.warn('Could not open WhatsApp Web:', err));
+    } else {
+      Linking.canOpenURL(waNativeUrl)
+        .then((supported) => {
+          if (supported) {
+            return Linking.openURL(waNativeUrl);
+          } else {
+            return Linking.openURL(waWebUrl);
+          }
+        })
+        .catch((err) => console.warn('Could not open WhatsApp:', err));
+    }
   };
 
   // Build Distress Message

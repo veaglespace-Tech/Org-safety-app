@@ -29,7 +29,7 @@ import { useAuthSession } from '@/hooks/useAuthSession';
 import { resolveDashboardPath } from '@/utils/roles';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppTheme } from '@/context/ThemeContext';
-import { AppFooter } from '@/components/layout/Footer';
+import { AppFooter } from '../layout/Footer';
 
 export function HomeHeroSection() {
   const router = useRouter();
