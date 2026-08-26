@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
@@ -331,7 +332,8 @@ export default function ProfileSettingsPage() {
         </SurfaceCard>
 
         {activeTab === 'profile' ? (
-          <SurfaceCard className="p-5">
+          <>
+            <SurfaceCard className="p-5">
             {/* Profile Avatar Selection */}
             <View className="items-center mb-6">
               <TouchableOpacity
@@ -461,6 +463,39 @@ export default function ProfileSettingsPage() {
               </View>
             </Button>
           </SurfaceCard>
+          
+          <SurfaceCard className="p-5 mt-4 border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10">
+            <View className="mb-4">
+              <Text className="text-lg font-black text-red-600 dark:text-red-400">Danger Zone</Text>
+              <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                Permanently delete your account and all associated data.
+              </Text>
+            </View>
+            <Button
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'To delete your account and all associated data, please visit our website and contact VeagleSpace support.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Visit Website', 
+                      style: 'destructive',
+                      onPress: () => Linking.openURL('https://tichisuraksha.com/delete-account') 
+                    }
+                  ]
+                );
+              }}
+              variant="outline"
+              className="border-red-200 dark:border-red-800"
+            >
+              <View className="flex-row items-center justify-center gap-2">
+                <Trash2 size={16} color="#ef4444" />
+                <Text className="text-red-600 dark:text-red-400 font-extrabold text-sm">Delete Account</Text>
+              </View>
+            </Button>
+          </SurfaceCard>
+        </>
         ) : (
           <SurfaceCard className="p-5">
             {/* Org Logo Selection */}

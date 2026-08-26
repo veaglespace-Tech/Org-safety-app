@@ -80,41 +80,25 @@ const orgSchema = z.object({
     .refine(isNotCommonEmailTypo, {
       message: 'Did you mean .com or .co.in? Please enter a valid email address.',
     }),
-  phoneCountryCode: z.string().regex(/^\+\d{1,3}$/, 'Select a valid country code'),
+  phoneCountryCode: z.string().optional(),
   phone: z
     .string()
     .trim()
     .refine(
       (val) => {
+        if (!val) return true;
         const digits = toDigitsOnly(val);
         return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
       },
       {
         message: `Phone number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
       }
-    ),
-  address: z
-    .string()
-    .trim()
-    .min(3, 'Address is required')
-    .max(250, 'Address is too long'),
-  city: z
-    .string()
-    .trim()
-    .min(2, 'City is required')
-    .max(80, 'City is too long')
-    .regex(PLACE_NAME_REGEX, 'City name contains invalid characters'),
-  state: z
-    .string()
-    .trim()
-    .min(2, 'State is required')
-    .max(80, 'State is too long')
-    .regex(PLACE_NAME_REGEX, 'State name contains invalid characters'),
-  country: z
-    .string()
-    .trim()
-    .min(2, 'Country is required')
-    .max(80, 'Country is too long'),
+    )
+    .optional(),
+  address: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  country: z.string().trim().optional(),
 });
 
 // --- Step 2 Schema: Admin Details ---
@@ -137,19 +121,21 @@ const adminSchema = z
       .refine(isNotCommonEmailTypo, {
         message: 'Did you mean .com or .co.in? Please enter a valid email address.',
       }),
-    mobileCountryCode: z.string().regex(/^\+\d{1,3}$/, 'Select a valid country code'),
+    mobileCountryCode: z.string().optional(),
     mobile: z
       .string()
       .trim()
       .refine(
         (val) => {
+          if (!val) return true;
           const digits = toDigitsOnly(val);
           return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
         },
         {
           message: `Mobile number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
         }
-      ),
+      )
+      .optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -160,10 +146,10 @@ const adminSchema = z
       ),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     city: z.string().trim().optional(),
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).default('MALE'),
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
     bloodGroup: z
       .enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'UNKNOWN'])
-      .default('O+'),
+      .optional(),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -223,8 +209,8 @@ export default function RegisterOrganisationScreen() {
       password: '',
       confirmPassword: '',
       city: '',
-      gender: 'MALE',
-      bloodGroup: 'O+',
+      gender: undefined,
+      bloodGroup: undefined,
       role: ROLES.ORG_ADMIN,
     },
   });
@@ -460,7 +446,6 @@ export default function RegisterOrganisationScreen() {
                   render={({ field: { onChange: onCodeChange, value: codeValue } }) => (
                     <CountryPhoneField
                       label="Contact Phone Number"
-                      required
                       countryCode={codeValue}
                       phone={value}
                       onCountryCodeChange={onCodeChange}
@@ -480,7 +465,6 @@ export default function RegisterOrganisationScreen() {
                   render={({ field: { onChange, value } }) => (
                     <TextInput
                       label="City"
-                      required
                       placeholder="Pune"
                       value={value}
                       onChangeText={onChange}
@@ -497,7 +481,6 @@ export default function RegisterOrganisationScreen() {
                   render={({ field: { onChange, value } }) => (
                     <TextInput
                       label="State"
-                      required
                       placeholder="Maharashtra"
                       value={value}
                       onChangeText={onChange}
@@ -514,7 +497,6 @@ export default function RegisterOrganisationScreen() {
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   label="Country"
-                  required
                   placeholder="India"
                   value={value}
                   onChangeText={onChange}
@@ -530,7 +512,6 @@ export default function RegisterOrganisationScreen() {
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   label="Official Practice / Office Address"
-                  required
                   placeholder="Ground / Hall / Road location"
                   value={value}
                   onChangeText={onChange}
@@ -604,7 +585,6 @@ export default function RegisterOrganisationScreen() {
                   render={({ field: { onChange: onCodeChange, value: codeValue } }) => (
                     <CountryPhoneField
                       label="Admin Mobile Number"
-                      required
                       countryCode={codeValue}
                       phone={value}
                       onCountryCodeChange={onCodeChange}
@@ -619,7 +599,7 @@ export default function RegisterOrganisationScreen() {
             {/* Gender */}
             <View className="mb-4">
               <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-                Gender <Text className="text-red-500">*</Text>
+                Gender
               </Text>
               <Controller
                 control={adminForm.control}
@@ -656,7 +636,7 @@ export default function RegisterOrganisationScreen() {
             {/* Blood Group */}
             <View className="mb-4">
               <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-                Blood Group <Text className="text-red-500">*</Text>
+                Blood Group
               </Text>
               <Controller
                 control={adminForm.control}
