@@ -219,3 +219,41 @@ exports.deleteOrganization = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.getActiveSosAlerts = async (req, res) => {
+  try {
+    const role = (req.user.role || '').toLowerCase();
+    if (role !== 'admin' && role !== 'org_admin' && role !== 'super_admin') {
+      return res.status(403).json({ error: "Only admins can view active SOS alerts." });
+    }
+
+    const currentUser = await prisma.users.findUnique({ where: { id: req.user.userId } });
+    if (!currentUser) return res.status(404).json({ error: "User not found" });
+
+    const activeAlerts = await prisma.sos_alerts.findMany({
+      where: {
+        organization_id: currentUser.organization_id,
+        status: 'active'
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            profile_photo: true,
+            emergency_contact: true,
+            blood_group: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.status(200).json({ alerts: activeAlerts });
+  } catch (error) {
+    console.error("Error fetching active SOS alerts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

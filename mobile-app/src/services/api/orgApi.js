@@ -13,6 +13,17 @@ export const orgApi = createApi({
         body: payload,
       }),
     }),
+    getActiveSosAlerts: builder.query({
+      query: () => "/org/active-sos",
+      providesTags: ["OrgDashboard"], // Using OrgDashboard to refresh on load
+    }),
+    deleteOrganization: builder.mutation({
+      query: () => ({
+        url: "/org",
+        method: "DELETE",
+      }),
+      invalidatesTags: ["OrgDashboard", "OrgUsers", "OrgTeams", "OrgAttendance"],
+    }),
     getOrgRegistrationRequests: builder.query({
       query: () => "/org/registration-requests",
       providesTags: ["RegistrationRequests"],
@@ -332,6 +343,8 @@ export const orgApi = createApi({
 
 export const {
   useOnboardOrganizationMutation,
+  useDeleteOrganizationMutation,
+  useGetActiveSosAlertsQuery,
   useGetOrgDashboardQuery,
   useGetOrgReportsQuery,
   useDownloadOrgReportPdfMutation,

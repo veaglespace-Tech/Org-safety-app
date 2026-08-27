@@ -12,6 +12,18 @@ class SOSService {
       throw new Error("User not found");
     }
 
+    const activeAlert = await prisma.sos_alerts.create({
+      data: {
+        user_id: userId,
+        organization_id: user.organization_id,
+        initial_location: locationUrl,
+        latest_location: locationUrl,
+        status: 'active'
+      }
+    });
+
+    const liveTrackingUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/live-tracking/${activeAlert.id}`;
+
     const distressMessage = `🚨 EMERGENCY SOS DISTRESS ALERT 🚨
 
 👤 Name: ${user.name}
@@ -22,6 +34,7 @@ class SOSService {
 🖼️ Profile Photo: ${user.profile_photo || 'N/A'}
 
 📍 LIVE GPS LOCATION: ${locationUrl || 'Location not provided'}
+🔗 LIVE TRACKER: ${liveTrackingUrl}
 
 ⚠️ I need immediate assistance! Please verify my safety.`;
 
@@ -94,9 +107,10 @@ class SOSService {
         </div>
         
         <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #22c55e;">
-          <p style="margin:0;"><strong>📍 LIVE GPS LOCATION:</strong></p>
-          <p style="margin-top:10px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">View Live Location</a></p>
-          <p style="margin-top:10px; font-size: 0.85em; color: #666;">URL: ${locationUrl || 'Location not provided'}</p>
+          <p style="margin:0;"><strong>📍 LIVE GPS TRACKING:</strong></p>
+          <p style="margin-top:10px;"><a href="${liveTrackingUrl}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">Open Live Tracker (Real-Time)</a></p>
+          <p style="margin-top:15px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #3b82f6; color: white; padding: 8px 16px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 0.9em;">Open in Google Maps</a></p>
+          <p style="margin-top:10px; font-size: 0.85em; color: #666;">Tracker URL: ${liveTrackingUrl}</p>
         </div>
         <p style="color: #ef4444; font-weight: bold; text-align: center; font-size: 1.1em; margin-top: 20px;">⚠️ I need immediate assistance! Please verify my safety.</p>
       </div>
@@ -112,7 +126,7 @@ class SOSService {
 
     await Promise.all([emailPromise, whatsappPromise, phonePromise]);
     
-    return { success: true, message: "SOS Distress Dispatched via all available channels." };
+    return { success: true, message: "SOS Distress Dispatched via all available channels.", alertId: activeAlert.id };
   }
 
   async updateSOS(userId, locationUrl) {
@@ -123,6 +137,23 @@ class SOSService {
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    const activeAlert = await prisma.sos_alerts.findFirst({
+      where: { user_id: userId, status: 'active' },
+      orderBy: { created_at: 'desc' }
+    });
+    
+    if (activeAlert) {
+      await prisma.sos_alerts.update({
+        where: { id: activeAlert.id },
+        data: { latest_location: locationUrl }
+      });
+    }
+
+    let liveTrackingUrl = '';
+    if (activeAlert) {
+      liveTrackingUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/live-tracking/${activeAlert.id}`;
     }
 
     const adminEmails = [];
@@ -164,7 +195,8 @@ class SOSService {
 ⚠️ THIS IS AN AUTOMATED ${process.env.SOS_INTERVAL_MINUTES || '5'}-MINUTE UPDATE.
 The user is STILL in an active emergency and has not marked themselves as safe.
 
-📍 LATEST LIVE LOCATION: ${locationUrl || 'Location not available'}
+📍 LATEST GOOGLE MAPS LOCATION: ${locationUrl || 'Location not available'}
+🔗 LIVE TRACKER: ${liveTrackingUrl || 'Not available'}
 `;
 
       const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ef4444&color=fff&size=200`;
@@ -196,8 +228,9 @@ The user is STILL in an active emergency and has not marked themselves as safe.
         
         <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #22c55e;">
           <p style="margin:0;"><strong>📍 LATEST LIVE LOCATION:</strong></p>
-          <p style="margin-top:10px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">View Live Location</a></p>
-          <p style="margin-top:10px; font-size: 0.85em; color: #666;">URL: ${locationUrl || 'Location not provided'}</p>
+          ${liveTrackingUrl ? `<p style="margin-top:10px;"><a href="${liveTrackingUrl}" style="display:inline-block; background-color: #22c55e; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;">Open Live Tracker (Real-Time)</a></p>` : ''}
+          <p style="margin-top:15px;"><a href="${locationUrl || '#'}" style="display:inline-block; background-color: #3b82f6; color: white; padding: 8px 16px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 0.9em;">Open in Google Maps</a></p>
+          ${liveTrackingUrl ? `<p style="margin-top:10px; font-size: 0.85em; color: #666;">Tracker URL: ${liveTrackingUrl}</p>` : ''}
         </div>
         <p style="color: #f59e0b; font-weight: bold; text-align: center; font-size: 1.1em; margin-top: 20px;">⚠️ THIS IS AN AUTOMATED ${process.env.SOS_INTERVAL_MINUTES || '5'}-MINUTE UPDATE.<br/>The user is STILL in an active emergency.</p>
       </div>
@@ -218,6 +251,17 @@ The user is STILL in an active emergency and has not marked themselves as safe.
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    const activeAlerts = await prisma.sos_alerts.findMany({
+      where: { user_id: userId, status: 'active' }
+    });
+    
+    for (const alert of activeAlerts) {
+      await prisma.sos_alerts.update({
+        where: { id: alert.id },
+        data: { status: 'resolved' }
+      });
     }
 
     const adminEmails = [];

@@ -66,8 +66,12 @@ exports.deleteEmail = async (req, res) => {
       where: { id: parseInt(id) }
     });
 
-    if (!emailRecord || emailRecord.user_id !== userId) {
+    if (!emailRecord) {
       return res.status(404).json({ error: "Emergency email not found" });
+    }
+
+    if (emailRecord.user_id != userId) {
+      return res.status(403).json({ error: "You are not authorized to delete this email." });
     }
 
     await prisma.emergency_emails.delete({

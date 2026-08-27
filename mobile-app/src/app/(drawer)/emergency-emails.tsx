@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import {
   MailWarning,
@@ -51,28 +52,37 @@ export default function EmergencyEmailsScreen() {
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert(
-      'Remove Email',
-      'Are you sure you want to delete this emergency email?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingId(id);
-            try {
-              await deleteEmail(id).unwrap();
-            } catch (error: any) {
-              console.error(error);
-              Alert.alert('Error', error?.data?.error || error?.message || 'Failed to delete email');
-            } finally {
-              setDeletingId(null);
-            }
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to delete this emergency email?');
+      if (confirmed) {
+        proceedDelete(id);
+      }
+    } else {
+      Alert.alert(
+        'Remove Email',
+        'Are you sure you want to delete this emergency email?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => proceedDelete(id),
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
+  };
+
+  const proceedDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await deleteEmail(id).unwrap();
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert('Error', error?.data?.error || error?.message || 'Failed to delete email');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (

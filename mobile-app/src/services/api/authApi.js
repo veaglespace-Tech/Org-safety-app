@@ -18,6 +18,12 @@ export const authApi = createApi({
         body: payload,
       }),
     }),
+    deleteMe: builder.mutation({
+      query: () => ({
+        url: "/auth/me",
+        method: "DELETE",
+      }),
+    }),
     userSignUp: builder.mutation({
       query: (userData) => ({
         url: "/auth/register",
@@ -144,6 +150,7 @@ export const authApi = createApi({
 export const {
   useGetMeQuery,
   useUpdateMeMutation,
+  useDeleteMeMutation,
   useUserSignUpMutation,
   useRegisterOrganizationMutation,
   useLazySearchOrganizationsQuery,
