@@ -327,6 +327,12 @@ export const orgApi = createApi({
       }),
       invalidatesTags: ["EmergencyEmails"],
     }),
+    deleteOrganization: builder.mutation({
+      query: () => ({
+        url: "/org",
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
@@ -383,4 +389,5 @@ export const {
   useGetEmergencyEmailsQuery,
   useAddEmergencyEmailMutation,
   useDeleteEmergencyEmailMutation,
+  useDeleteOrganizationMutation,
 } = orgApi;

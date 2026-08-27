@@ -11,7 +11,7 @@ export default function HomeSpotlight() {
 
           <div className="relative z-10 order-2 max-w-xl text-center lg:order-1 lg:text-left">
             <h3 className="brand-spotlight-title mb-5 text-2xl font-black leading-tight sm:mb-6 sm:text-3xl md:mb-8 md:text-6xl">
-              Make attendance easier <br className="hidden md:block" /> for everyone.
+              Make safety management easier <br className="hidden md:block" /> for everyone.
             </h3>
             <div className="mb-10 flex flex-wrap justify-center gap-3 lg:justify-start">
               {SPOTLIGHT_TAGS.map((tag) => (

@@ -73,7 +73,7 @@ export default function MemberDashboard() {
                 {user?.organizations?.name || user?.organization?.name || "ढोल - ताशा महासंघ"}
               </h2>
               <p className="text-slate-600 dark:text-slate-300 max-w-xl text-base sm:text-lg leading-relaxed font-medium">
-                Check out your organization's updates, view your team members, and manage your attendance securely.
+                Check out your organization's updates, view your team members, and manage your safety securely.
               </p>
             </div>
           </div>

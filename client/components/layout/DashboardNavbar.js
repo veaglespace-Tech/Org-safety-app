@@ -4,6 +4,7 @@ import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { LogOut, User, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { logout } from "@/store/slices/authSlice";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 
@@ -43,7 +44,7 @@ export default function DashboardNavbar({ onToggleSidebar }) {
               {user?.name || "User"}
             </p>
             <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest mt-1.5">
-              {user?.role === 'admin' ? 'Admin Portal' : (user?.role || 'Member')}
+              {user?.role === 'admin' ? 'Admin Portal' : user?.role === 'super_admin' ? 'Super Admin' : (user?.role || 'Member')}
             </p>
           </div>
           

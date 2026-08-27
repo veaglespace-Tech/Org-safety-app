@@ -27,7 +27,7 @@ const ROLE_LINKS = {
     { href: "/dashboard/settings", label: "Workspace Settings", icon: Settings },
   ],
   member: [
-    { href: "/dashboard/attendance", label: "Attendance", icon: CalendarCheck },
+    { href: "/dashboard/attendance", label: "Safety Status", icon: CalendarCheck },
     { href: "/dashboard/settings", label: "Profile Settings", icon: Settings },
   ],
 };
@@ -79,10 +79,10 @@ export default function Dashboard() {
         },
       ]
     : [
-        { icon: Clock, label: "Daily Attendance", value: stats?.myAttendance || "0/0", tone: "blue" },
+        { icon: Clock, label: "Daily Status", value: stats?.myAttendance || "0/0", tone: "blue" },
         { icon: Zap, label: "Active Streak", value: `${stats?.streak || "0"} Days`, tone: "amber" },
         { icon: ShieldCheck, label: "Verified", value: "Yes", tone: "emerald" },
-        { icon: TrendingUp, label: "Attendance Focus", value: "On Track", tone: "indigo" },
+        { icon: TrendingUp, label: "Safety Focus", value: "On Track", tone: "indigo" },
       ];
 
   const quickLinks = isManager ? ROLE_LINKS.admin : ROLE_LINKS.member;
@@ -94,13 +94,13 @@ export default function Dashboard() {
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
           <div>
             <div className="brand-chip mobile-hide-chip">
-              Attendance Snapshot
+              Safety Snapshot
             </div>
             <h1 className="brand-hero-title mobile-compact-hero-title mt-3 sm:mt-4">
               {firstName}&apos;s Dashboard
             </h1>
             <p className="brand-copy mobile-hide-copy mt-3 max-w-2xl">
-              See today&apos;s attendance, recent activity, and the actions that matter most for your day.
+              See today&apos;s safety status, recent activity, and the actions that matter most for your day.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -131,7 +131,7 @@ export default function Dashboard() {
               label="Today"
               value={isManager ? `${stats?.presentToday || 0} Present` : stats?.myAttendance || "0/0"}
             />
-            <MiniCard label="Organization" value={user?.organizationCode || "Veagle Attendee"} />
+            <MiniCard label="Organization" value={user?.organizationCode || "tichisuraksha"} />
             <MiniCard
               label={isManager ? "Productivity" : "Streak"}
               value={isManager ? `${stats?.productivity || 0}%` : `${stats?.streak || 0} Days`}

@@ -9,6 +9,7 @@ router.post('/super-admin-login', authController.superAdminLogin);
 router.post('/join/:referralCode', authController.joinOrganization);
 router.get('/me', authenticateToken, authController.getMe);
 router.patch('/me', authenticateToken, authController.updateMe);
+router.delete('/me', authenticateToken, authController.deleteMe);
 router.post('/logout', authController.logout);
 
 module.exports = router;

@@ -8,5 +8,7 @@ router.get('/organizations', authenticateToken, superAdminController.getOrganiza
 router.get('/organizations/:id', authenticateToken, superAdminController.getOrganizationById);
 router.get('/users', authenticateToken, superAdminController.getUsers);
 router.delete('/users/:id', authenticateToken, superAdminController.deleteUser);
+router.put('/users/:id', authenticateToken, superAdminController.updateUser);
+router.delete('/organizations/:id', authenticateToken, superAdminController.deleteOrganization);
 
 module.exports = router;

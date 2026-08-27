@@ -13,7 +13,11 @@ import { useUserSignOutMutation } from "@/services/api/authApi";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { formatRoleLabel, resolveDashboardPath } from "@/utils/roles";
 
-const NAV_LINKS = [];
+const NAV_LINKS = [
+  { href: "/about", label: "About Us" },
+  { href: "/privacy-policy", label: "Privacy Policy" },
+  { href: "/contact", label: "Contact Us" }
+];
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -37,7 +41,7 @@ export default function Navbar() {
     pathname?.startsWith("/org") ||
     pathname?.startsWith("/member") ||
     pathname?.startsWith("/team-leader") ||
-    (pathname?.startsWith("/super-admin") && pathname !== "/super-admin/login");
+    (pathname?.startsWith("/admin") && pathname !== "/admin/login");
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -103,8 +107,8 @@ export default function Navbar() {
         <div className="site-container">
           <div className="flex h-16 items-center justify-between gap-2.5 sm:h-20 sm:gap-3 min-[1180px]:gap-6">
             <Link href="/" className="group flex min-w-0 flex-1 items-center gap-2.5 sm:flex-none lg:gap-3">
-              <div key={pathname} className="brand-logo-reveal relative flex shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105 h-10 w-10 overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
-                <Image src="/images/tich-surksha-woman.jpg" alt="Logo" fill className="object-cover" />
+              <div key={pathname} className="brand-logo-reveal relative flex shrink-0 items-center justify-center transition-all duration-500 group-hover:scale-105">
+                <img src="/images/tich-surksha-woman-transparent.png" alt="Brand Logo" className="w-10 h-10 object-contain drop-shadow-lg filter dark:brightness-110" />
               </div>
               <span className="min-w-0 truncate text-lg font-black tracking-tight text-slate-900 dark:text-white sm:text-xl 2xl:text-2xl">
                 ढोल - ताशा <span className="brand-wordmark">महासंघ</span>

@@ -7,27 +7,42 @@ export const superAdminApi = createApi({
   tagTypes: ['Stats', 'Organizations', 'Users'],
   endpoints: (builder) => ({
     getStats: builder.query({
-      query: () => '/super-admin/stats',
+      query: () => '/admin/stats',
       providesTags: ['Stats'],
     }),
     getOrganizations: builder.query({
-      query: () => '/super-admin/organizations',
+      query: () => '/admin/organizations',
       providesTags: ['Organizations'],
     }),
     getOrganizationById: builder.query({
-      query: (id) => `/super-admin/organizations/${id}`,
+      query: (id) => `/admin/organizations/${id}`,
       providesTags: (result, error, id) => [{ type: 'Organizations', id }],
     }),
     getUsers: builder.query({
-      query: () => '/super-admin/users',
+      query: () => '/admin/users',
       providesTags: ['Users'],
     }),
     deleteSuperAdminUser: builder.mutation({
       query: (id) => ({
-        url: `/super-admin/users/${id}`,
+        url: `/admin/users/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ['Users', 'Organizations'],
+    }),
+    updateSuperAdminUser: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/users/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ['Users', 'Organizations'],
+    }),
+    deleteOrganization: builder.mutation({
+      query: (id) => ({
+        url: `/admin/organizations/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ['Organizations', 'Stats'],
     }),
   }),
 });
@@ -38,4 +53,6 @@ export const {
   useGetOrganizationByIdQuery,
   useGetUsersQuery,
   useDeleteSuperAdminUserMutation,
+  useUpdateSuperAdminUserMutation,
+  useDeleteOrganizationMutation,
 } = superAdminApi;

@@ -1,6 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
+import locationReducer from "./slices/locationSlice";
 import { apiErrorNotificationMiddleware } from "./middleware/apiErrorNotificationMiddleware";
 import { authApi } from "@/services/api/authApi";
 import { planApi } from "@/services/api/planApi";
@@ -20,6 +21,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     notifications: notificationReducer,
+    location: locationReducer,
     [authApi.reducerPath]: authApi.reducer,
     [planApi.reducerPath]: planApi.reducer,
     [orgApi.reducerPath]: orgApi.reducer,

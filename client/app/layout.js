@@ -12,8 +12,31 @@ import Footer from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
 
 export const metadata = {
-  title: "ढोल - ताशा महासंघ - Attendance Management Simplified",
-  description: "Modern multi-tenant attendance management system for organizations.",
+  metadataBase: new URL('https://tichisuraksha.veaglespace.com'),
+  title: "ढोल - ताशा महासंघ",
+  description: "A dedicated women's safety platform for organizations.",
+  openGraph: {
+    title: "ढोल - ताशा महासंघ",
+    description: "A dedicated women's safety platform for organizations.",
+    url: "https://tichisuraksha.veaglespace.com/",
+    siteName: "ढोल - ताशा महासंघ",
+    images: [
+      {
+        url: "https://tichisuraksha.veaglespace.com/images/tich-surksha-woman-transparent.png",
+        width: 800,
+        height: 800,
+        alt: "ढोल - ताशा महासंघ Logo",
+      }
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ढोल - ताशा महासंघ",
+    description: "A dedicated women's safety platform for organizations.",
+    images: ["https://tichisuraksha.veaglespace.com/images/tich-surksha-woman-transparent.png"],
+  }
 };
 
 const THEME_BOOTSTRAP_SCRIPT = `(() => {

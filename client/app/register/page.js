@@ -32,9 +32,10 @@ export default async function RegisterPage({ searchParams }) {
 
       <div className="relative z-10 mx-auto w-full max-w-5xl">
         <div className="mb-14 text-center">
-          <SectionEyebrow className="mb-6">
-            Get Started
-          </SectionEyebrow>
+          <SectionEyebrow className="mb-4 md:mb-5">Organization Setup</SectionEyebrow>
+          <div className="flex justify-center mb-6">
+            <img src="/images/tich-surksha-woman-transparent.png" alt="Brand Logo" className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-xl filter dark:brightness-110" />
+          </div>
           <h1 className="mb-4 text-5xl font-black leading-tight tracking-tight text-slate-950 dark:text-white md:text-7xl">
             ढोल - ताशा <span className="gradient-text">महासंघ</span>
           </h1>
@@ -47,7 +48,7 @@ export default async function RegisterPage({ searchParams }) {
           <RegistrationCard
             icon={Building2}
             title="Create Organization"
-            desc="Set up your organization, invite your team, and start managing attendance from one place."
+            desc="Set up your organization, invite your team, and start managing safety from one place."
             badge="Owner / Admin"
             href="/register/organisation"
           />

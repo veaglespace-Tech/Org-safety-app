@@ -127,8 +127,8 @@ export default function UserModal({ isOpen, onClose, user = null }) {
           </div>
 
           <div>
-            <label className={labelClass}>Email Address</label>
-            <input type="email" {...register("email")} className={inputClass} placeholder="john@example.com" disabled={isEditing} />
+            <label htmlFor="email" className={labelClass}>Email Address</label>
+            <input id="email" type="email" {...register("email")} className={inputClass} placeholder="john@example.com" />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
           </div>
 

@@ -3,8 +3,8 @@ import { BarChart3, ShieldCheck, Zap } from "lucide-react";
 export const FEATURE_CARDS = [
   {
     icon: Zap,
-    title: "Smart Attendance Tracking",
-    desc: "Track check-ins, workdays, and attendance updates without chasing people for status.",
+    title: "Smart Safety Tracking",
+    desc: "Track check-ins, status, and safety updates without chasing people for status.",
     accent: "text-blue-600 dark:text-blue-300",
   },
   {
@@ -15,13 +15,13 @@ export const FEATURE_CARDS = [
   },
   {
     icon: BarChart3,
-    title: "Clear Attendance Reports",
+    title: "Clear Safety Reports",
     desc: "See present, absent, and late records in reports that managers can understand at a glance.",
     accent: "text-blue-600 dark:text-blue-300",
   },
 ];
 
-export const SPOTLIGHT_TAGS = ["Attendance", "Teams", "Reports", "Role Based"];
+export const SPOTLIGHT_TAGS = ["Safety", "Teams", "Reports", "Role Based"];
 
 export const SPOTLIGHT_STATS = [
   { value: "50K+", label: "Check-ins" },

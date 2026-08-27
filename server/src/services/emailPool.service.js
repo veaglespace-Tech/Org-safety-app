@@ -54,9 +54,9 @@ class EmailPoolService {
     for (let i = 0; i < this.transporters.length; i++) {
       const config = this.transporters[i];
       try {
-        // We override the 'from' field to match the transporter's authenticated user
+        // we override the 'from' field to match the transporter's authenticated user
         // so the SMTP server doesn't reject it for spoofing
-        const fromName = process.env.EMAIL_FROM_NAME || 'Veagle Attendee';
+        const fromName = process.env.EMAIL_FROM_NAME || 'tichisuraksha';
         
         const mailOptions = {
           ...baseMailOptions,

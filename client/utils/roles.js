@@ -28,7 +28,7 @@ export const ROLE_ALIASES = Object.freeze({
 });
 
 export const DASHBOARD_ROOT_BY_ROLE = Object.freeze({
-  [ROLES.SUPER_ADMIN]: "/super-admin",
+  [ROLES.SUPER_ADMIN]: "/admin",
   [ROLES.ORG_ADMIN]: "/org",
   [ROLES.SUB_ADMIN]: "/org",
   [ROLES.TEAM_LEADER]: "/team-leader",

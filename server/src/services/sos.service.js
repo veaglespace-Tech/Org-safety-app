@@ -43,7 +43,15 @@ class SOSService {
       }
     });
 
+    const emergencyEmails = await prisma.emergency_emails.findMany({
+      where: { user_id: userId }
+    });
 
+    emergencyEmails.forEach(record => {
+      if (record.email && !adminEmails.includes(record.email)) {
+        adminEmails.push(record.email);
+      }
+    });
     
     const adminPhones = admins.map(a => a.phone).filter(Boolean);
     if (process.env.ADMIN_PHONE && !adminPhones.includes(process.env.ADMIN_PHONE)) {
@@ -51,13 +59,8 @@ class SOSService {
     }
     
     const dispatchPhones = [...adminPhones];
-    if (user.emergency_contact) {
-      const eContacts = user.emergency_contact.split(',').map(n => n.trim()).filter(Boolean);
-      eContacts.forEach(contact => {
-         if (!dispatchPhones.includes(contact)) {
-            dispatchPhones.push(contact);
-         }
-      });
+    if (user.emergency_contact && !dispatchPhones.includes(user.emergency_contact)) {
+      dispatchPhones.push(user.emergency_contact);
     }
 
     const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ef4444&color=fff&size=200`;
@@ -140,7 +143,15 @@ class SOSService {
       }
     });
     
+    const emergencyEmails = await prisma.emergency_emails.findMany({
+      where: { user_id: userId }
+    });
 
+    emergencyEmails.forEach(record => {
+      if (record.email && !adminEmails.includes(record.email)) {
+        adminEmails.push(record.email);
+      }
+    });
     
     if (adminEmails.length > 0) {
       const updateMessage = `🚨 EMERGENCY SOS UPDATE 🚨
@@ -227,7 +238,16 @@ The user is STILL in an active emergency and has not marked themselves as safe.
       }
     });
 
+    const emergencyEmails = await prisma.emergency_emails.findMany({
+      where: { user_id: userId }
+    });
 
+    emergencyEmails.forEach(record => {
+      if (record.email && !adminEmails.includes(record.email)) {
+        adminEmails.push(record.email);
+      }
+    });
+    
     if (adminEmails.length > 0) {
       const stopMessage = `✅ SOS RESOLVED ✅
 

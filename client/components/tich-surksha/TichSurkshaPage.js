@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useTriggerSosMutation, useUpdateSosLocationMutation, useStopSosMutation } from "@/services/api/authApi";
 import { AlertTriangle, Shield, Phone, MapPin, Loader2, CheckCircle2, MessageCircle, Mail, RefreshCw, ExternalLink, User, Building2, Info } from "lucide-react";
 import { useSelector } from "react-redux";
+import useGeoLocationTracker from "@/hooks/useGeoLocationTracker";
 
 export default function TichSurkshaPage() {
   const [triggerSos, { isLoading }] = useTriggerSosMutation();
@@ -12,13 +13,19 @@ export default function TichSurkshaPage() {
   
   const [status, setStatus] = useState("idle"); // idle, success, error
   const [isSosActive, setIsSosActive] = useState(false);
+  const [trackingToken, setTrackingToken] = useState(null);
+  const { startTracking, stopTracking } = useGeoLocationTracker(trackingToken);
   const intervalRef = useRef(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const active = localStorage.getItem('isSosActive') === 'true';
+      const savedToken = localStorage.getItem('sosTrackingToken');
       if (active) {
         setIsSosActive(true);
+        if (savedToken) {
+          setTrackingToken(savedToken);
+        }
       }
     }
   }, []);
@@ -29,21 +36,32 @@ export default function TichSurkshaPage() {
       if (intervalRef.current) clearInterval(intervalRef.current);
       const sosIntervalMinutes = parseInt(process.env.NEXT_PUBLIC_SOS_INTERVAL_MINUTES) || 1;
       intervalRef.current = setInterval(async () => {
+        let liveTrackingUrl = "";
+        if (typeof window !== 'undefined' && trackingToken) {
+          liveTrackingUrl = `${window.location.origin}/live-tracking/${trackingToken}`;
+        }
+        
+        // Still fetch static location for fallback
         if ("geolocation" in navigator) {
           navigator.geolocation.getCurrentPosition(
             async (position) => {
-              const liveLoc = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`;
+              const staticLoc = `https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`;
               try {
-                await updateSosLocation({ locationUrl: liveLoc }).unwrap();
+                await updateSosLocation({ locationUrl: liveTrackingUrl || staticLoc }).unwrap();
               } catch (err) {
                 console.error("Failed to send recurring SOS update", err);
               }
             },
             (err) => {
               console.warn("Could not fetch high accuracy interval location", err);
+              if (liveTrackingUrl) {
+                updateSosLocation({ locationUrl: liveTrackingUrl }).catch(e => console.error(e));
+              }
             },
             { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
           );
+        } else if (liveTrackingUrl) {
+           updateSosLocation({ locationUrl: liveTrackingUrl }).catch(e => console.error(e));
         }
       }, sosIntervalMinutes * 60 * 1000);
     } else {
@@ -69,14 +87,6 @@ export default function TichSurkshaPage() {
   const progressTimerRef = useRef(null);
   
   const { user } = useSelector((state) => state.auth);
-  
-  const [customEmergencyContact, setCustomEmergencyContact] = useState("");
-
-  useEffect(() => {
-    if (user?.emergencyContact) {
-      setCustomEmergencyContact(user.emergencyContact);
-    }
-  }, [user?.emergencyContact]);
 
   const startHold = () => {
     if (isSosActive || isLoading || isStopping) return;
@@ -155,9 +165,22 @@ export default function TichSurkshaPage() {
         localStorage.setItem('isSosActive', 'true');
       }
 
-      let locationUrl = "";
+      const newToken = user?.id ? `sos-${user.id}-${Date.now()}` : `sos-${Date.now()}`;
+      setTrackingToken(newToken);
+      if (typeof window !== "undefined") {
+        localStorage.setItem('sosTrackingToken', newToken);
+      }
+      // Wait for React to process token state or we can just start directly,
+      // but useGeoLocationTracker's useEffect will catch the new token automatically.
+      
+      let liveTrackingUrl = "";
+      let staticGoogleMapsUrl = "";
+      
+      if (typeof window !== 'undefined') {
+        liveTrackingUrl = `${window.location.origin}/live-tracking/${newToken}`;
+      }
       if (location) {
-        locationUrl = `https://maps.google.com/?q=${location.lat},${location.lng}`;
+        staticGoogleMapsUrl = `https://maps.google.com/?q=${location.lat},${location.lng}`;
       }
 
       // 1. OPEN WHATSAPP AND DIALER IMMEDIATELY (no await before this to prevent popup blockers)
@@ -168,15 +191,13 @@ export default function TichSurkshaPage() {
 📞 Phone: ${user?.phone || 'Not provided'}
 🚨 Emergency Contact: ${user?.emergencyContact || 'Not provided'}
 
-📍 LATEST LIVE LOCATION: ${locationUrl || 'Not available'}
+📍 LIVE TRACKING: ${liveTrackingUrl || 'Not available'}
+📍 STATIC MAP: ${staticGoogleMapsUrl || 'Not available'}
 `;
       
-      const emContactStr = customEmergencyContact ? String(customEmergencyContact) : (user?.emergencyContact ? String(user.emergencyContact) : '');
-      const whatsappNumber = emContactStr ? emContactStr.replace(/\D/g, '') : '';
-      if (whatsappNumber) {
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(distressMessage)}`;
-        window.open(whatsappUrl, '_blank');
-      }
+      // Open WhatsApp contact picker so the user can select multiple contacts (including their emergency contact)
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(distressMessage)}`;
+      window.open(whatsappUrl, '_blank');
 
       const phoneLink = document.createElement("a");
       phoneLink.href = `tel:${user?.emergencyContact || ''}`;
@@ -184,21 +205,8 @@ export default function TichSurkshaPage() {
 
       // 2. TRIGGER SOS EMAILS IN BACKGROUND (API CALL)
       (async () => {
-        let apiLocationUrl = locationUrl;
-        if (!apiLocationUrl && "geolocation" in navigator) {
-          try {
-            apiLocationUrl = await new Promise((resolve) => {
-              navigator.geolocation.getCurrentPosition(
-                (position) => resolve(`https://maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`),
-                (err) => resolve(""),
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
-              );
-            });
-          } catch (err) {}
-        }
-        
         try {
-          await triggerSos({ locationUrl: apiLocationUrl }).unwrap();
+          await triggerSos({ locationUrl: liveTrackingUrl || staticGoogleMapsUrl }).unwrap();
         } catch (error) {
           console.error("SOS trigger failed", error);
           setStatus("error");
@@ -214,8 +222,10 @@ export default function TichSurkshaPage() {
   const handleStopSos = async () => {
     try {
       setIsSosActive(false);
+      stopTracking();
       if (typeof window !== "undefined") {
         localStorage.removeItem('isSosActive');
+        localStorage.removeItem('sosTrackingToken');
       }
       setStatus("idle");
       await stopSos().unwrap();
@@ -291,21 +301,9 @@ export default function TichSurkshaPage() {
         {/* Subtle background glow */}
         <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
-        <div className="flex items-center justify-between mb-10 text-rose-400">
-          <div className="flex items-center gap-3">
-            <Shield size={20} />
-            <h2 className="text-sm font-bold tracking-widest uppercase">Emergency SOS Dispatch</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase text-slate-500">WhatsApp To:</span>
-            <input 
-              type="text" 
-              value={customEmergencyContact} 
-              onChange={(e) => setCustomEmergencyContact(e.target.value)}
-              placeholder="e.g. 919876543210"
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 dark:text-slate-300 w-36 outline-none focus:border-rose-400"
-            />
-          </div>
+        <div className="flex items-center gap-3 mb-10 text-rose-400">
+          <Shield size={20} />
+          <h2 className="text-sm font-bold tracking-widest uppercase">Emergency SOS Dispatch</h2>
         </div>
 
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
@@ -324,6 +322,7 @@ export default function TichSurkshaPage() {
                 onTouchStart={!isSosActive ? startHold : undefined}
                 onTouchEnd={!isSosActive ? cancelHold : undefined}
                 onClick={isSosActive ? handleStopSos : undefined}
+                disabled={isLoading || isStopping}
                 className={`relative z-10 w-48 h-48 md:w-56 md:h-56 rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
                   isSosActive
                     ? "bg-black border-4 border-rose-600 hover:bg-slate-900 shadow-[0_0_50px_rgba(225,29,72,0.6)] animate-pulse" 
@@ -341,13 +340,11 @@ export default function TichSurkshaPage() {
                 )}
                 
                 <div className="relative z-10 flex flex-col items-center justify-center">
-                  {isSosActive ? (
+                  {isLoading || isStopping ? (
+                    <Loader2 size={48} className="text-white animate-spin" />
+                  ) : isSosActive ? (
                     <>
-                      {isLoading || isStopping ? (
-                        <Loader2 size={48} className="text-white animate-spin" />
-                      ) : (
-                        <CheckCircle2 size={48} className="text-rose-500" />
-                      )}
+                      <CheckCircle2 size={48} className="text-rose-500" />
                       <span className="text-white font-black text-2xl tracking-widest leading-none mt-2">STOP SOS</span>
                       <span className="text-rose-400 text-xs font-bold tracking-widest uppercase mt-1">CANCEL ALERT</span>
                     </>
@@ -358,7 +355,7 @@ export default function TichSurkshaPage() {
                         {isHolding ? "HOLD..." : "PRESS SOS"}
                       </span>
                       <span className={`${isHolding ? "text-emerald-200" : "text-emerald-100"} text-xs font-bold tracking-widest uppercase mt-1`}>
-                        {isHolding ? "KEEP HOLDING" : "Hold for 3s to alert"}
+                        {isHolding ? `${Math.round(holdProgress)}%` : "Hold for 3s to alert"}
                       </span>
                     </>
                   )}

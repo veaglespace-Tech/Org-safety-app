@@ -138,6 +138,12 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    deleteMe: builder.mutation({
+      query: () => ({
+        url: "/auth/me",
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
@@ -162,4 +168,5 @@ export const {
   useTriggerSosMutation,
   useUpdateSosLocationMutation,
   useStopSosMutation,
+  useDeleteMeMutation,
 } = authApi;

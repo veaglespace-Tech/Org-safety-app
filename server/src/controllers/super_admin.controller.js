@@ -24,6 +24,11 @@ exports.getOrganizations = async (req, res) => {
     if (req.user.role !== 'super_admin') return res.status(403).json({ error: "Access denied" });
 
     const organizations = await prisma.organizations.findMany({
+      include: {
+        _count: {
+          select: { users: true }
+        }
+      },
       orderBy: { created_at: 'desc' }
     });
 
@@ -71,21 +76,19 @@ exports.getOrganizationById = async (req, res) => {
     const organization = await prisma.organizations.findUnique({
       where: { id: orgId },
       include: {
-        users: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            role: true,
-            created_at: true,
-          }
-        }
+        users: true
       }
     });
 
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
+    }
+
+    if (organization.users) {
+      organization.users = organization.users.map(u => {
+        const { password_hash, ...rest } = u;
+        return rest;
+      });
     }
 
     res.status(200).json({ organization });
@@ -119,6 +122,86 @@ exports.deleteUser = async (req, res) => {
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     console.error("Error deleting user globally:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.deleteOrganization = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Access denied. Only super admins can delete organizations." });
+    }
+
+    const orgId = parseInt(id, 10);
+    if (isNaN(orgId)) {
+      return res.status(400).json({ error: "Invalid organization ID" });
+    }
+
+    const organizationToDelete = await prisma.organizations.findUnique({ where: { id: orgId } });
+    if (!organizationToDelete) {
+      return res.status(404).json({ error: "Organization not found." });
+    }
+
+    await prisma.organizations.delete({ where: { id: orgId } });
+    res.status(200).json({ message: "Organization deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting organization globally:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: "Access denied. Only super admins can update users." });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      emergency_contact,
+      blood_group,
+      gender,
+      city,
+      current_address,
+      permanent_address
+    } = req.body;
+
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const userToUpdate = await prisma.users.findUnique({ where: { id: userId } });
+    if (!userToUpdate) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const updatedUser = await prisma.users.update({
+      where: { id: userId },
+      data: {
+        name: name !== undefined ? name : userToUpdate.name,
+        email: email !== undefined ? email : userToUpdate.email,
+        phone: phone !== undefined ? phone : userToUpdate.phone,
+        emergency_contact: emergency_contact !== undefined ? emergency_contact : userToUpdate.emergency_contact,
+        blood_group: blood_group !== undefined ? blood_group : userToUpdate.blood_group,
+        gender: gender !== undefined ? gender : userToUpdate.gender,
+        city: city !== undefined ? city : userToUpdate.city,
+        current_address: current_address !== undefined ? current_address : userToUpdate.current_address,
+        permanent_address: permanent_address !== undefined ? permanent_address : userToUpdate.permanent_address,
+      }
+    });
+
+    const { password_hash, ...rest } = updatedUser;
+
+    res.status(200).json({ message: "User updated successfully", user: rest });
+  } catch (error) {
+    console.error("Error updating user:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
