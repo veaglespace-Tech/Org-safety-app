@@ -35,8 +35,6 @@ import {
 } from '@/services/api/authApi';
 import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '@/components/layout/Footer';
-import { io } from 'socket.io-client';
-import { API_BASE_URL } from '@/config';
 
 export default function SOSScreen() {
   const { user } = useSelector((state: any) => state.auth);
@@ -64,8 +62,6 @@ export default function SOSScreen() {
   const progressTimerRef = useRef<any>(null);
   const trackingIntervalRef = useRef<any>(null);
   const holdCompletedRef = useRef<boolean>(false);
-  const socketRef = useRef<any>(null);
-  const activeAlertIdRef = useRef<string | null>(null);
   const [pulseAnim] = useState(() => new Animated.Value(1));
 
   const HOLD_DURATION = 3000; // 3.0 Seconds Hold Required
@@ -125,12 +121,6 @@ export default function SOSScreen() {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
       if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
-      if (socketRef.current) {
-        if (activeAlertIdRef.current) {
-          socketRef.current.emit('leave-track', { token: activeAlertIdRef.current });
-        }
-        socketRef.current.disconnect();
-      }
       clearTimeout(timer);
     };
   }, [pulseAnim]);
@@ -276,56 +266,24 @@ ${locUrl || 'Location coordinates not available'}
       triggerDirectEmergencyChannels(locUrl);
 
       // 2. Dispatch SOS to backend server in background (Sends automated emails)
-      (triggerSos as any)({ locationUrl: locUrl }).unwrap().then((response: any) => {
-        if (response?.alertId) {
-          activeAlertIdRef.current = response.alertId;
-          const socketUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-          socketRef.current = io(socketUrl, {
-            path: '/api/socket.io',
-            withCredentials: true,
-          });
-          socketRef.current.on('connect', () => {
-            console.log('Socket connected for live tracking');
-            socketRef.current.emit('join-track', { token: response.alertId });
-          });
-        }
-      }).catch((err: any) => {
+      (triggerSos as any)({ locationUrl: locUrl }).unwrap().catch((err: any) => {
         console.warn('Backend SOS trigger failed', err);
       });
 
-      // 3. Setup periodic location updates (API every 2 mins & Socket every 5 secs)
+      // 3. Setup periodic location email updates (Strictly 2 mins)
       const sosIntervalMinutes = 2;
-      let lastApiUpdateTime = Date.now();
 
       trackingIntervalRef.current = setInterval(async () => {
         try {
           let updatedLoc = await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
           });
-          
           let newLocUrl = `https://maps.google.com/?q=${updatedLoc.coords.latitude},${updatedLoc.coords.longitude}`;
-          
-          // Emit socket update
-          if (socketRef.current && activeAlertIdRef.current) {
-            socketRef.current.emit('location-updated', {
-              token: activeAlertIdRef.current,
-              latitude: updatedLoc.coords.latitude,
-              longitude: updatedLoc.coords.longitude,
-              accuracy: updatedLoc.coords.accuracy || 10,
-              timestamp: Date.now()
-            });
-          }
-
-          // Send API update every 2 minutes
-          const now = Date.now();
-          if (now - lastApiUpdateTime >= sosIntervalMinutes * 60 * 1000) {
-            lastApiUpdateTime = now;
-            await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
-          }
+          await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
         } catch (e) {
           console.error('Failed to send periodic SOS location update', e);
         }
-      }, 5000); // Update socket every 5 seconds
+      }, sosIntervalMinutes * 60 * 1000);
     } catch (err) {
       console.error('SOS Trigger Failed', err);
       setStatus('error');
@@ -341,14 +299,6 @@ ${locUrl || 'Location coordinates not available'}
       if (trackingIntervalRef.current) {
         clearInterval(trackingIntervalRef.current);
         trackingIntervalRef.current = null;
-      }
-      if (socketRef.current) {
-        if (activeAlertIdRef.current) {
-          socketRef.current.emit('leave-track', { token: activeAlertIdRef.current });
-        }
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        activeAlertIdRef.current = null;
       }
       await (stopSos as any)({}).unwrap();
       setIsSosActive(false);

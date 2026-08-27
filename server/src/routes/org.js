@@ -9,7 +9,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.patch('/settings/details', authenticateToken, orgController.updateSettingsDetails);
 router.patch('/settings/logo', authenticateToken, upload.single('logo'), orgController.updateSettingsLogo);
 
-router.get('/active-sos', authenticateToken, orgController.getActiveSosAlerts);
 router.get('/members', authenticateToken, orgController.getMembers);
 router.post('/users', authenticateToken, orgController.createOrgUser);
 router.patch('/users/:id', authenticateToken, orgController.updateOrgUser);

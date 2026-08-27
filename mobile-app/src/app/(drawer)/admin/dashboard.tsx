@@ -32,12 +32,10 @@ import {
   X,
   MapPin,
   Heart,
-  AlertTriangle,
 } from 'lucide-react-native';
 
 import { useGetMembersQuery } from '@/services/api/authApi';
-import { usePatchOrgUserMutation, useDeleteOrgUserMutation, useGetActiveSosAlertsQuery } from '@/services/api/orgApi';
-import { CLIENT_BASE_URL } from '@/config';
+import { usePatchOrgUserMutation, useDeleteOrgUserMutation } from '@/services/api/orgApi';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { ActionModal } from '@/components/ui/ActionModal';
@@ -51,11 +49,6 @@ export default function AdminDashboard() {
 
   const { data: membersData, isLoading: isMembersLoading, refetch: refetchMembers } =
     useGetMembersQuery(undefined);
-
-  const { data: activeAlertsData } = useGetActiveSosAlertsQuery(undefined, {
-    pollingInterval: 15000, // Refresh every 15 seconds
-  });
-  const activeAlerts = activeAlertsData?.alerts || [];
 
   const [patchOrgUser, { isLoading: isUpdatingUser }] = usePatchOrgUserMutation();
   const [deleteOrgUser, { isLoading: isDeletingUser }] = useDeleteOrgUserMutation();
@@ -237,52 +230,6 @@ export default function AdminDashboard() {
           </View>
         </View>
       </View>
-
-      {/* 1.5 Active SOS Alerts Section */}
-      {activeAlerts.length > 0 && (
-        <View className="px-4 mt-4">
-          <View className="bg-rose-500/10 border border-rose-500/30 rounded-3xl p-4 shadow-sm dark:shadow-xl">
-            <View className="flex-row items-center gap-2 mb-3">
-              <AlertTriangle size={20} color="#f43f5e" />
-              <Text className="text-rose-600 dark:text-rose-400 font-black text-sm uppercase tracking-widest">
-                ACTIVE EMERGENCIES ({activeAlerts.length})
-              </Text>
-            </View>
-            
-            {activeAlerts.map((alert: any) => (
-              <View key={alert.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 mb-3 border border-rose-200 dark:border-rose-900/50">
-                <View className="flex-row items-center justify-between mb-2">
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/30 items-center justify-center overflow-hidden">
-                      {alert.users?.profile_photo ? (
-                        <Image source={{ uri: alert.users.profile_photo }} style={{ width: 40, height: 40 }} />
-                      ) : (
-                        <User size={20} color="#f43f5e" />
-                      )}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-slate-900 dark:text-white font-bold text-sm">{alert.users?.name}</Text>
-                      <Text className="text-slate-500 dark:text-slate-400 text-xs font-mono">{alert.users?.phone || 'No Phone'}</Text>
-                    </View>
-                  </View>
-                  <View className="bg-rose-100 dark:bg-rose-900/50 px-2.5 py-1 rounded-lg">
-                    <Text className="text-rose-600 dark:text-rose-400 text-[10px] font-black">ACTIVE</Text>
-                  </View>
-                </View>
-                
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(`${CLIENT_BASE_URL}/live-tracking/${alert.id}`)}
-                  activeOpacity={0.8}
-                  className="mt-2 flex-row items-center justify-center gap-2 bg-rose-600 py-3 rounded-xl shadow-md shadow-rose-500/20 active:bg-rose-700"
-                >
-                  <MapPin size={16} color="#ffffff" />
-                  <Text className="text-white font-bold text-xs">Track Live Location</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
 
       {/* 2. Stat & Referral Box */}
       <View className="px-4 mt-4">
