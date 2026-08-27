@@ -115,6 +115,9 @@ export function CountryPhoneField({
             <FlatList
               data={COUNTRY_PHONE_OPTIONS}
               keyExtractor={(item) => `${item.iso}-${item.code}`}
+              initialNumToRender={15}
+              maxToRenderPerBatch={15}
+              windowSize={5}
               renderItem={({ item }) => {
                 const isSelected = item.code === activeCode;
                 return (

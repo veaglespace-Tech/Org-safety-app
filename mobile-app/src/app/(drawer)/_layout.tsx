@@ -276,16 +276,14 @@ export default function DrawerLayout() {
             borderBottomWidth: 1,
           },
           headerRight: () => {
-            const { user: headerUser } = useSelector((state: any) => state.auth);
-            const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(headerUser?.name || 'U')}&background=6366f1&color=fff&size=150`;
             return (
               <Pressable
                 onPress={() => router.push('/(drawer)/profile')}
                 className="mr-4 w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 items-center justify-center"
               >
-                {headerUser?.profilePhoto || headerUser?.profile_photo ? (
+                {user?.profilePhoto || user?.profile_photo ? (
                   <Image
-                    source={{ uri: headerUser.profilePhoto || headerUser.profile_photo }}
+                    source={{ uri: user.profilePhoto || user.profile_photo }}
                     className="w-full h-full"
                   />
                 ) : (

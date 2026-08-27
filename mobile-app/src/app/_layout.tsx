@@ -5,16 +5,17 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import React, { useEffect } from 'react';
 import { View, LogBox } from 'react-native';
-
-LogBox.ignoreLogs([
-  '[Reanimated] Writing to `value` during component render',
-  '[Reanimated] Reading from `value` during component render',
-]);
 import { loadSession } from '@/store/slices/authSlice';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+
+LogBox.ignoreLogs([
+  '[Reanimated] Writing to `value` during component render',
+  '[Reanimated] Reading from `value` during component render',
+]);
 
 function ThemeAwareStatusBar() {
   const { isDark } = useAppTheme();

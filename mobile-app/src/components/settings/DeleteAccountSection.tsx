@@ -25,10 +25,10 @@ export default function DeleteAccountSection({ type = 'user' }: DeleteAccountSec
   const handleDelete = async () => {
     try {
       if (type === 'org') {
-        await deleteOrg().unwrap();
+        await deleteOrg(undefined).unwrap();
         Alert.alert("Success", "Organization deleted successfully");
       } else {
-        await deleteMe().unwrap();
+        await deleteMe(undefined).unwrap();
         Alert.alert("Success", "Account deleted successfully");
       }
       

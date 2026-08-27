@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import * as ImagePicker from 'expo-image-picker';
@@ -263,8 +265,9 @@ export default function ProfileSettingsPage() {
   };
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-950">
-      {/* Tabs Header */}
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+        {/* Tabs Header */}
       {isAdmin && (
         <View className="flex-row px-5 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <TouchableOpacity
@@ -579,5 +582,6 @@ export default function ProfileSettingsPage() {
         </View>
       </ActionModal>
     </View>
+    </KeyboardAvoidingView>
   );
 }

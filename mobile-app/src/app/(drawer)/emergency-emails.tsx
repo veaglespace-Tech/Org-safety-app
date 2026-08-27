@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {
   MailWarning,
@@ -86,7 +87,11 @@ export default function EmergencyEmailsScreen() {
   };
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
       className="flex-1 bg-slate-50 dark:bg-slate-950"
       contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 10 }}
       keyboardShouldPersistTaps="handled"
@@ -194,11 +199,12 @@ export default function EmergencyEmailsScreen() {
             ))}
           </View>
         )}
-      </SurfaceCard>
-      
-      <View className="px-4 mt-auto">
-        <AppFooter />
-      </View>
-    </ScrollView>
+        </SurfaceCard>
+        
+        <View className="px-4 mt-auto">
+          <AppFooter />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
