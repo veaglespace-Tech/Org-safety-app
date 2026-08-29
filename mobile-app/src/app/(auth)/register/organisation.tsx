@@ -86,35 +86,32 @@ const orgSchema = z.object({
     .trim()
     .refine(
       (val) => {
+        if (!val) return true;
         const digits = toDigitsOnly(val);
         return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
       },
       {
         message: `Phone number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
       }
-    ),
+    ).optional(),
   address: z
     .string()
     .trim()
-    .min(3, 'Address is required')
-    .max(250, 'Address is too long'),
+    .max(250, 'Address is too long').optional(),
   city: z
     .string()
     .trim()
-    .min(2, 'City is required')
     .max(80, 'City is too long')
-    .regex(PLACE_NAME_REGEX, 'City name contains invalid characters'),
+    .regex(PLACE_NAME_REGEX, 'City name contains invalid characters').optional(),
   state: z
     .string()
     .trim()
-    .min(2, 'State is required')
     .max(80, 'State is too long')
-    .regex(PLACE_NAME_REGEX, 'State name contains invalid characters'),
+    .regex(PLACE_NAME_REGEX, 'State name contains invalid characters').optional(),
   country: z
     .string()
     .trim()
-    .min(2, 'Country is required')
-    .max(80, 'Country is too long'),
+    .max(80, 'Country is too long').optional(),
 });
 
 // --- Step 2 Schema: Admin Details ---
@@ -143,13 +140,14 @@ const adminSchema = z
       .trim()
       .refine(
         (val) => {
+          if (!val) return true;
           const digits = toDigitsOnly(val);
           return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
         },
         {
           message: `Mobile number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
         }
-      ),
+      ).optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -160,10 +158,10 @@ const adminSchema = z
       ),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     city: z.string().trim().optional(),
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).default('MALE'),
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
     bloodGroup: z
       .enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'UNKNOWN'])
-      .default('O+'),
+      .optional(),
     role: z.string().default(ROLES.ORG_ADMIN),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -188,7 +186,7 @@ export default function RegisterOrganisationScreen() {
   const dispatch = useDispatch();
   const { isDark } = useAppTheme();
 
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [selectedPlanId, setSelectedPlanId] = useState<number>(1);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
@@ -223,8 +221,8 @@ export default function RegisterOrganisationScreen() {
       password: '',
       confirmPassword: '',
       city: '',
-      gender: 'MALE',
-      bloodGroup: 'O+',
+      gender: undefined,
+      bloodGroup: undefined,
       role: ROLES.ORG_ADMIN,
     },
   });
@@ -259,10 +257,10 @@ export default function RegisterOrganisationScreen() {
     setCurrentStep(2);
   };
 
-  // Handle Step 2 Next
+  // Handle Step 2 Final Submit
   const handleAdminSubmit = async (values: AdminFormValues) => {
     await setRegistrationDraft(REGISTRATION_DRAFT_KEYS.admin, values);
-    setCurrentStep(3);
+    handleFinalSubmit();
   };
 
   // Handle Final Submission
@@ -275,7 +273,7 @@ export default function RegisterOrganisationScreen() {
       const adminValues = adminForm.getValues();
 
       const payload = {
-        organisation: {
+        org: {
           ...orgValues,
           name: normalizeTextInput(orgValues.name),
           email: normalizeEmailInput(orgValues.email),
@@ -343,7 +341,11 @@ export default function RegisterOrganisationScreen() {
               if (currentStep > 1) {
                 setCurrentStep((prev) => (prev - 1) as any);
               } else {
-                router.back();
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(auth)/register');
+                }
               }
             }}
             className="flex-row items-center gap-1.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
@@ -359,8 +361,8 @@ export default function RegisterOrganisationScreen() {
         {/* Header Title Section */}
         <View className="mb-4">
           <BadgePill
-            label={`Step ${currentStep} of 3 • ${
-              currentStep === 1 ? 'Org Profile' : currentStep === 2 ? 'Admin Account' : 'Plan Selection'
+            label={`Step ${currentStep} of 2 • ${
+              currentStep === 1 ? 'Org Profile' : 'Admin Account'
             }`}
             variant="primary"
             className="mb-2.5"
@@ -368,22 +370,18 @@ export default function RegisterOrganisationScreen() {
           <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             {currentStep === 1
               ? 'Register Organization'
-              : currentStep === 2
-              ? 'Admin Account Credentials'
-              : 'Choose Your Plan'}
+              : 'Admin Account Credentials'}
           </Text>
           <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
             {currentStep === 1
               ? 'Enter your band or organization official details'
-              : currentStep === 2
-              ? 'Create the primary admin credentials to manage your team'
-              : 'Select your subscription tier to activate safety tools'}
+              : 'Create the primary admin credentials to manage your team'}
           </Text>
         </View>
 
         {/* Multi-step progress bar */}
         <View className="flex-row items-center gap-2 mb-6">
-          {[1, 2, 3].map((step) => (
+          {[1, 2].map((step) => (
             <View
               key={step}
               className={`h-2 flex-1 rounded-full ${
@@ -423,7 +421,7 @@ export default function RegisterOrganisationScreen() {
                 <TextInput
                   label="Organization Name"
                   required
-                  placeholder="e.g. शिवगर्जना ढोल ताशा पथक"
+                  placeholder="Enter organization name"
                   value={value}
                   onChangeText={onChange}
                   error={orgForm.formState.errors.name?.message}
@@ -439,7 +437,7 @@ export default function RegisterOrganisationScreen() {
                 <TextInput
                   label="Official Email Address"
                   required
-                  placeholder="contact@shivgarjana.org"
+                  placeholder="Enter official email address"
                   value={value}
                   onChangeText={onChange}
                   keyboardType="email-address"
@@ -459,8 +457,8 @@ export default function RegisterOrganisationScreen() {
                   name="phoneCountryCode"
                   render={({ field: { onChange: onCodeChange, value: codeValue } }) => (
                     <CountryPhoneField
-                      label="Contact Phone Number"
-                      required
+                      label="Contact Phone Number (Optional)"
+
                       countryCode={codeValue}
                       phone={value}
                       onCountryCodeChange={onCodeChange}
@@ -479,8 +477,8 @@ export default function RegisterOrganisationScreen() {
                   name="city"
                   render={({ field: { onChange, value } }) => (
                     <TextInput
-                      label="City"
-                      required
+                      label="City (Optional)"
+
                       placeholder="Pune"
                       value={value}
                       onChangeText={onChange}
@@ -496,8 +494,8 @@ export default function RegisterOrganisationScreen() {
                   name="state"
                   render={({ field: { onChange, value } }) => (
                     <TextInput
-                      label="State"
-                      required
+                      label="State (Optional)"
+
                       placeholder="Maharashtra"
                       value={value}
                       onChangeText={onChange}
@@ -513,8 +511,8 @@ export default function RegisterOrganisationScreen() {
               name="country"
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  label="Country"
-                  required
+                  label="Country (Optional)"
+
                   placeholder="India"
                   value={value}
                   onChangeText={onChange}
@@ -529,8 +527,8 @@ export default function RegisterOrganisationScreen() {
               name="address"
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  label="Official Practice / Office Address"
-                  required
+                  label="Official Practice / Office Address (Optional)"
+
                   placeholder="Ground / Hall / Road location"
                   value={value}
                   onChangeText={onChange}
@@ -567,7 +565,7 @@ export default function RegisterOrganisationScreen() {
                 <TextInput
                   label="Admin Full Name"
                   required
-                  placeholder="e.g. Akshay Singare"
+                  placeholder="Enter admin full name"
                   value={value}
                   onChangeText={onChange}
                   error={adminForm.formState.errors.name?.message}
@@ -603,8 +601,8 @@ export default function RegisterOrganisationScreen() {
                   name="mobileCountryCode"
                   render={({ field: { onChange: onCodeChange, value: codeValue } }) => (
                     <CountryPhoneField
-                      label="Admin Mobile Number"
-                      required
+                      label="Admin Mobile Number (Optional)"
+
                       countryCode={codeValue}
                       phone={value}
                       onCountryCodeChange={onCodeChange}
@@ -619,7 +617,7 @@ export default function RegisterOrganisationScreen() {
             {/* Gender */}
             <View className="mb-4">
               <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-                Gender <Text className="text-red-500">*</Text>
+                Gender <Text className="text-slate-400 font-normal text-xs">(Optional)</Text>
               </Text>
               <Controller
                 control={adminForm.control}
@@ -656,7 +654,7 @@ export default function RegisterOrganisationScreen() {
             {/* Blood Group */}
             <View className="mb-4">
               <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-                Blood Group <Text className="text-red-500">*</Text>
+                Blood Group <Text className="text-slate-400 font-normal text-xs">(Optional)</Text>
               </Text>
               <Controller
                 control={adminForm.control}
@@ -726,133 +724,16 @@ export default function RegisterOrganisationScreen() {
 
             <Button
               onPress={adminForm.handleSubmit(handleAdminSubmit)}
+              isLoading={isSubmitting}
               size="lg"
               className="bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/30 mt-2"
             >
               <View className="flex-row items-center justify-center gap-2">
-                <Text className="text-white font-extrabold text-base">Next: Select Plan</Text>
+                <Text className="text-white font-extrabold text-base">Complete Registration</Text>
                 <ArrowRight size={18} color="#fff" />
               </View>
             </Button>
           </SurfaceCard>
-        )}
-
-        {/* STEP 3: Plan Selection & Final Confirm */}
-        {currentStep === 3 && (
-          <View className="space-y-4 mb-6">
-            {/* Plans List */}
-            {(plans.length > 0
-              ? plans
-              : [
-                  {
-                    id: 1,
-                    name: 'Free Starter Trial',
-                    price: 0,
-                    memberLimit: 50,
-                    description: 'Full safety features, Geofence attendance, and SOS alerts.',
-                  },
-                  {
-                    id: 2,
-                    name: 'Pro Organization',
-                    price: 999,
-                    memberLimit: 250,
-                    description: 'Unlimited teams, instrument inventory, priority SMS SOS.',
-                  },
-                ]
-            ).map((plan: any) => {
-              const isSelected = selectedPlanId === plan.id;
-              return (
-                <TouchableOpacity
-                  key={plan.id}
-                  onPress={() => setSelectedPlanId(plan.id)}
-                  activeOpacity={0.9}
-                  className="mb-3"
-                >
-                  <SurfaceCard
-                    variant={isSelected ? 'glow' : 'default'}
-                    className={`border-2 transition-all ${
-                      isSelected ? 'border-blue-600 bg-blue-50/20 dark:bg-blue-950/30' : 'border-slate-200 dark:border-slate-800'
-                    }`}
-                  >
-                    <View className="flex-row justify-between items-center mb-2">
-                      <View className="flex-row items-center gap-2">
-                        <Crown size={20} color={isSelected ? '#2563eb' : '#64748b'} />
-                        <Text className="text-lg font-black text-slate-900 dark:text-white">{plan.name}</Text>
-                      </View>
-                      <View
-                        className={`w-6 h-6 rounded-full items-center justify-center border-2 ${
-                          isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
-                        }`}
-                      >
-                        {isSelected && <CheckCircle2 size={16} color="#fff" />}
-                      </View>
-                    </View>
-
-                    <Text className="text-slate-600 dark:text-slate-300 font-medium text-xs mb-3">
-                      {plan.description}
-                    </Text>
-
-                    <View className="flex-row items-baseline gap-1">
-                      <Text className="text-2xl font-black text-slate-900 dark:text-white">
-                        ₹{plan.price || 0}
-                      </Text>
-                      <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs">/ year</Text>
-                    </View>
-
-                    <View className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex-row items-center gap-2">
-                      <Zap size={14} color="#10b981" />
-                      <Text className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                        Up to {plan.memberLimit || 50} active members
-                      </Text>
-                    </View>
-                  </SurfaceCard>
-                </TouchableOpacity>
-              );
-            })}
-
-            {/* Summary Review Card */}
-            <SurfaceCard variant="flat" className="mt-4">
-              <View className="flex-row items-center gap-2 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-                <ShieldCheck size={18} color="#4f46e5" />
-                <Text className="text-sm font-extrabold text-slate-900 dark:text-white">Registration Summary</Text>
-              </View>
-
-              <View className="space-y-1.5">
-                <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Organization:</Text>
-                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
-                    {orgForm.getValues('name')}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Location:</Text>
-                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
-                    {orgForm.getValues('city')}, {orgForm.getValues('state')}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">Admin:</Text>
-                  <Text className="text-xs font-bold text-slate-900 dark:text-white">
-                    {adminForm.getValues('name')} ({adminForm.getValues('email')})
-                  </Text>
-                </View>
-              </View>
-            </SurfaceCard>
-
-            <Button
-              onPress={handleFinalSubmit}
-              isLoading={isSubmitting}
-              size="lg"
-              className="bg-blue-600 rounded-2xl shadow-xl shadow-blue-500/30 mt-4"
-            >
-              <View className="flex-row items-center justify-center gap-2">
-                <Text className="text-white font-extrabold text-base">
-                  Complete Registration & Launch
-                </Text>
-                <ArrowRight size={18} color="#fff" />
-              </View>
-            </Button>
-          </View>
         )}
 
         <View className="mt-8">

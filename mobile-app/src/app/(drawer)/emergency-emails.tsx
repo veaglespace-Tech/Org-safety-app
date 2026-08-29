@@ -38,13 +38,14 @@ export default function EmergencyEmailsScreen() {
   const emails = data?.emails || [];
 
   const handleAddEmail = async () => {
-    if (!newEmail || !/^\S+@\S+\.\S+$/.test(newEmail)) {
+    const trimmedEmail = newEmail.trim();
+    if (!trimmedEmail || !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(trimmedEmail)) {
       Alert.alert('Invalid Email', 'Please enter a valid email address.');
       return;
     }
     
     try {
-      await addEmail({ email: newEmail }).unwrap();
+      await addEmail({ email: trimmedEmail }).unwrap();
       setNewEmail('');
     } catch (error: any) {
       console.error(error);
@@ -135,10 +136,10 @@ export default function EmergencyEmailsScreen() {
           />
           <TouchableOpacity
             onPress={handleAddEmail}
-            disabled={isAdding || !newEmail || emails.length >= 10}
+            disabled={isAdding || emails.length >= 10}
             className={`px-5 rounded-xl justify-center items-center flex-row gap-2 ${
-              isAdding || !newEmail || emails.length >= 10
-                ? 'bg-blue-400 dark:bg-blue-800'
+              isAdding || emails.length >= 10
+                ? 'bg-blue-400 dark:bg-blue-800 opacity-70'
                 : 'bg-blue-600 active:bg-blue-700'
             }`}
           >

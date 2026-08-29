@@ -9,15 +9,16 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "icon": "./assets/images/tich-surksha-woman.png",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "तिची सुरक्षा needs camera access to take profile photos and organization logos. This helps identify members in emergency situations.",
-        "NSPhotoLibraryUsageDescription": "तिची सुरक्षा needs access to your photo library to upload your profile photo and organization logo for identification during SOS emergencies.",
-        "NSPhotoLibraryAddUsageDescription": "तिची सुरक्षा needs permission to save photos related to your safety profile.",
-        "NSLocationWhenInUseUsageDescription": "तिची सुरक्षा needs your location to send accurate GPS coordinates to your emergency contacts when you trigger an SOS alert. Your location is only used during emergencies.",
+        "NSCameraUsageDescription": "तिची सुरक्षा requires camera access to allow you to take and upload a profile picture.",
+        "NSPhotoLibraryUsageDescription": "तिची सुरक्षा requires access to your photo library so you can choose and upload a profile picture.",
+        "NSPhotoLibraryAddUsageDescription": "तिची सुरक्षा requires permission to save photos to your device.",
+        "NSLocationWhenInUseUsageDescription": "तिची सुरक्षा requires location access to share your location with emergency contacts when you trigger an SOS.",
+        "NSMicrophoneUsageDescription": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert.",
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "whatsapp",
@@ -61,14 +62,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "तिची सुरक्षा needs location access to send your GPS coordinates when you trigger an SOS emergency alert."
+          "locationWhenInUsePermission": "तिची सुरक्षा requires location access to share your location with emergency contacts when you trigger an SOS."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "तिची सुरक्षा needs access to your photos to upload your profile picture and organization logo for your safety profile.",
-          "cameraPermission": "तिची सुरक्षा needs camera access to take your profile photo and organization logo for your safety identity card."
+          "photosPermission": "तिची सुरक्षा requires access to your photo library so you can choose and upload a profile picture.",
+          "cameraPermission": "तिची सुरक्षा requires camera access to allow you to take and upload a profile picture.",
+          "microphonePermission": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert."
         }
       ]
     ],

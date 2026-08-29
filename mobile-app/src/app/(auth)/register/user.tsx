@@ -78,31 +78,29 @@ const userSchema = z
       .trim()
       .refine(
         (val) => {
+          if (!val) return true;
           const digits = toDigitsOnly(val);
           return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
         },
         {
           message: `Mobile number must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
         }
-      ),
-    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'], {
-      required_error: 'Please select a gender',
-    }),
-    bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'UNKNOWN'], {
-      required_error: 'Please select a blood group',
-    }),
+      ).optional(),
+    gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+    bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'UNKNOWN']).optional(),
     emergencyContact: z
       .string()
       .trim()
       .refine(
         (val) => {
+          if (!val) return true;
           const digits = toDigitsOnly(val);
           return digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX;
         },
         {
           message: `Emergency contact must be between ${PHONE_DIGIT_MIN} and ${PHONE_DIGIT_MAX} digits`,
         }
-      ),
+      ).optional(),
     referralCode: z
       .string()
       .trim()
@@ -111,19 +109,16 @@ const userSchema = z
     currentAddress: z
       .string()
       .trim()
-      .min(3, 'Current address is required')
-      .max(250, 'Address is too long'),
+      .max(250, 'Address is too long').optional(),
     permanentAddress: z
       .string()
       .trim()
-      .min(3, 'Permanent address is required')
-      .max(250, 'Address is too long'),
+      .max(250, 'Address is too long').optional(),
     city: z
       .string()
       .trim()
-      .min(2, 'City is required')
       .max(80, 'City is too long')
-      .regex(PLACE_NAME_REGEX, 'City name contains invalid characters'),
+      .regex(PLACE_NAME_REGEX, 'City name contains invalid characters').optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -174,8 +169,8 @@ export default function RegisterUserScreen() {
       email: '',
       mobileCountryCode: '+91',
       mobile: '',
-      gender: 'FEMALE',
-      bloodGroup: 'O+',
+      gender: undefined,
+      bloodGroup: undefined,
       emergencyContact: '',
       referralCode: searchParams.ref || '',
       currentAddress: '',
@@ -272,7 +267,13 @@ export default function RegisterUserScreen() {
         {/* Top Header: Back Button & ThemeToggle */}
         <View className="flex-row items-center justify-between mb-6">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(auth)/register');
+              }
+            }}
             className="flex-row items-center gap-1.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
           >
             <ArrowLeft size={16} color={isDark ? '#38bdf8' : '#2563eb'} />
@@ -370,7 +371,7 @@ export default function RegisterUserScreen() {
               <TextInput
                 label="Full Name"
                 required
-                placeholder="e.g. Rahul Sharma"
+                placeholder="Enter your full name"
                 value={value}
                 onChangeText={onChange}
                 error={errors.name?.message}
@@ -387,7 +388,7 @@ export default function RegisterUserScreen() {
               <TextInput
                 label="Email Address"
                 required
-                placeholder="rahul@example.com"
+                placeholder="Enter your email address"
                 value={value}
                 onChangeText={onChange}
                 keyboardType="email-address"
@@ -408,8 +409,7 @@ export default function RegisterUserScreen() {
                 name="mobileCountryCode"
                 render={({ field: { onChange: onCodeChange, value: codeValue } }) => (
                   <CountryPhoneField
-                    label="Mobile Number"
-                    required
+                    label="Mobile Number (Optional)"
                     countryCode={codeValue}
                     phone={value}
                     onCountryCodeChange={onCodeChange}
@@ -424,7 +424,7 @@ export default function RegisterUserScreen() {
           {/* Gender Selector */}
           <View className="mb-4">
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-              Gender <Text className="text-red-500">*</Text>
+              Gender <Text className="text-slate-400 font-normal text-xs">(Optional)</Text>
             </Text>
             <Controller
               control={control}
@@ -466,7 +466,7 @@ export default function RegisterUserScreen() {
           {/* Blood Group Selector */}
           <View className="mb-4">
             <Text className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 ml-1">
-              Blood Group <Text className="text-red-500">*</Text>
+              Blood Group <Text className="text-slate-400 font-normal text-xs">(Optional)</Text>
             </Text>
             <Controller
               control={control}
@@ -520,8 +520,8 @@ export default function RegisterUserScreen() {
             name="emergencyContact"
             render={({ field: { onChange, value } }) => (
               <TextInput
-                label="Emergency Contact Number"
-                required
+                label="Emergency Contact Number (Optional)"
+
                 placeholder="Parent / Guardian / Spouse Number"
                 value={value}
                 onChangeText={onChange}
@@ -537,8 +537,8 @@ export default function RegisterUserScreen() {
             name="city"
             render={({ field: { onChange, value } }) => (
               <TextInput
-                label="City"
-                required
+                label="City (Optional)"
+
                 placeholder="e.g. Pune"
                 value={value}
                 onChangeText={onChange}
@@ -553,8 +553,8 @@ export default function RegisterUserScreen() {
             name="currentAddress"
             render={({ field: { onChange, value } }) => (
               <TextInput
-                label="Current Address"
-                required
+                label="Current Address (Optional)"
+
                 placeholder="Flat / Street / Area"
                 value={value}
                 onChangeText={onChange}
@@ -592,8 +592,8 @@ export default function RegisterUserScreen() {
               name="permanentAddress"
               render={({ field: { onChange, value } }) => (
                 <TextInput
-                  label="Permanent Address"
-                  required
+                  label="Permanent Address (Optional)"
+
                   placeholder="Native place / Home town address"
                   value={value}
                   onChangeText={onChange}
