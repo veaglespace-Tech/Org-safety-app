@@ -9,10 +9,13 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
+    'http://localhost:8081',
+    'http://10.0.2.2:8081',
     'http://195.35.21.96',
     'http://195.35.21.96:3000',
     'http://195.35.21.96:3001',
-    'https://195.35.21.96'
+    'https://195.35.21.96',
+    'https://tichisuraksha.veaglespace.com'
   ],
   credentials: true
 }));

@@ -60,7 +60,10 @@ export default function LoginScreen() {
   useEffect(() => {
     if (!hydrated || !token || !user) return;
     const target = getDashboardRoute(user?.role || user?.currentRole, user?.dashboardPath || redirectPath);
-    router.replace(target as any);
+    // Add a slight delay to ensure React commits state before unmounting current navigator
+    setTimeout(() => {
+      router.replace(target as any);
+    }, 100);
   }, [hydrated, token, user, redirectPath, router]);
 
   const onSubmit = async (values: LoginFormData) => {
@@ -73,10 +76,7 @@ export default function LoginScreen() {
 
       const result = await userSignIn(payload).unwrap();
       dispatch(setSession(result));
-
-      const role = result?.user?.role || result?.user?.currentRole;
-      const targetRoute = getDashboardRoute(role, result?.redirectPath || result?.user?.dashboardPath);
-      router.replace(targetRoute as any);
+      // Routing is handled by the useEffect watching auth state
     } catch (err: any) {
       const errorMsg =
         err?.data?.error ||

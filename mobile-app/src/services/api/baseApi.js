@@ -13,6 +13,9 @@ const prepareAuthHeaders = (headers, { getState }) => {
   if (token && token !== "__cookie_session__") {
     headers.set("authorization", `Bearer ${token}`);
   }
+  
+  // Force Connection: close to prevent React Native SocketExceptions on Nginx servers
+  headers.set("Connection", "close");
 
   return headers;
 };

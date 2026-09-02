@@ -11,7 +11,7 @@ const imagekit = new ImageKit({
 
 exports.updateSettingsDetails = async (req, res) => {
   try {
-    const { name, email, phone, address, city, state, country } = req.body;
+    const { name, email, phone, address, city, state, country, logo } = req.body;
     
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: "Only admins can update organization settings." });
@@ -20,9 +20,24 @@ exports.updateSettingsDetails = async (req, res) => {
     const currentUser = await prisma.users.findUnique({ where: { id: req.user.userId } });
     if (!currentUser) return res.status(404).json({ error: "User not found" });
 
+    const updateData = { name, email, phone, address, city, state, country };
+
+    if (logo !== undefined) {
+      if (logo && logo.startsWith('data:image/')) {
+        const response = await imagekit.upload({
+          file: logo,
+          fileName: `org_${currentUser.organization_id}_logo_${Date.now()}`,
+          folder: '/organization_logos'
+        });
+        updateData.logo = response.url;
+      } else {
+        updateData.logo = logo;
+      }
+    }
+
     const updatedOrg = await prisma.organizations.update({
       where: { id: currentUser.organization_id },
-      data: { name, email, phone, address, city, state, country }
+      data: updateData
     });
 
     res.status(200).json({ message: "Organization details updated successfully", organization: updatedOrg });

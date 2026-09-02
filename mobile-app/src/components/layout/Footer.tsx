@@ -26,7 +26,7 @@ export function AppFooter() {
         activeOpacity={0.7}
         className="w-full flex-row items-center justify-center px-4 py-2 mb-2 bg-[#0F172A] border border-[#1E293B] rounded-xl shadow-sm"
       >
-        <Text className="text-[13px] sm:text-[14px] font-bold text-white tracking-wide text-center">
+        <Text className="text-[14px] font-bold text-white tracking-wide text-center">
           Powered By –{' '}
           <Text className="text-[#38BDF8] underline font-bold">
             &quot;शिवमुद्रा ढोल ताशा पथक,पुणे&quot;
@@ -41,13 +41,13 @@ export function AppFooter() {
           activeOpacity={0.7}
           className="px-2 items-center"
         >
-          <Text className="text-[11px] sm:text-[12px] text-slate-500 dark:text-slate-400 font-medium text-center leading-relaxed">
+          <Text className="text-[12px] text-slate-500 dark:text-slate-400 font-medium text-center leading-relaxed">
             Designed & Developed by{' '}
             <Text className="text-blue-500 dark:text-[#38BDF8] underline">
               Veagle Space Technology Pvt. Ltd.
             </Text>
           </Text>
-          <Text className="text-[10px] sm:text-[11px] text-slate-400/80 dark:text-slate-500 font-medium mt-0.5 text-center">
+          <Text className="text-[11px] text-slate-400/80 dark:text-slate-500 font-medium mt-0.5 text-center">
             © 2026 All Rights Reserved.
           </Text>
         </TouchableOpacity>

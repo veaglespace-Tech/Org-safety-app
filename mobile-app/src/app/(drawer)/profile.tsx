@@ -39,7 +39,6 @@ import { Button } from '@/components/ui/Button';
 import { ROLES } from '@/utils/roles';
 import { useAppTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GENDERS = [
@@ -538,9 +537,6 @@ export default function ProfileSettingsPage() {
             </Button>
           </SurfaceCard>
         )}
-        
-        <DeleteAccountSection type={activeTab === 'profile' ? 'user' : 'org'} />
-        
         <View className="mt-auto pt-6">
           <AppFooter />
         </View>

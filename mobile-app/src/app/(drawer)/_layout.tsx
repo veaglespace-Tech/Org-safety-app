@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, Image, Pressable, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
-import { Redirect, router, usePathname } from 'expo-router';
+import { Redirect, useRouter, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   LayoutDashboard,
@@ -22,6 +22,7 @@ function CustomDrawerContent(props: any) {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const pathname = usePathname();
+  const router = useRouter();
   const { isDark } = useAppTheme();
 
   const handleLogout = () => {
@@ -46,12 +47,6 @@ function CustomDrawerContent(props: any) {
       route: dashboardRoute,
       icon: LayoutDashboard,
       color: '#3b82f6',
-    },
-    {
-      label: 'तिची\u00A0सुरक्षा',
-      route: '/(drawer)/sos',
-      icon: Shield,
-      color: '#ef4444',
     },
     {
       label: 'Emergency Emails',
@@ -171,47 +166,57 @@ function CustomDrawerContent(props: any) {
 
           const IconComp = item.icon;
           return (
-            <Pressable
+            <TouchableOpacity
               key={item.label}
               onPress={() => {
                 if (typeof (props.navigation?.closeDrawer) === 'function') {
                   props.navigation.closeDrawer();
                 }
-                router.navigate(item.route as any);
+                const screenName = item.route.replace('/(drawer)/', '');
+                props.navigation.navigate(screenName);
               }}
-              className={`flex-row items-center gap-3.5 mx-3 my-1 px-4 py-3.5 rounded-2xl ${
-                isActive
-                  ? 'bg-blue-600 shadow-lg shadow-blue-500/30'
-                  : isDark
-                  ? 'active:bg-slate-800/80'
-                  : 'active:bg-slate-100'
-              }`}
-              style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+              activeOpacity={0.75}
             >
-              <IconComp
-                color={
-                  isActive
-                    ? '#ffffff'
-                    : isDark
-                    ? item.color
-                    : item.color === '#94a3b8'
-                    ? '#64748b'
-                    : item.color
-                }
-                size={20}
-              />
-              <Text
-                className={`font-extrabold text-sm ${
-                  isActive
-                    ? 'text-white'
-                    : isDark
-                    ? 'text-slate-300'
-                    : 'text-slate-700'
-                }`}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  marginHorizontal: 12,
+                  marginVertical: 4,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: isActive ? '#2563eb' : 'transparent',
+                }}
               >
-                {item.label}
-              </Text>
-            </Pressable>
+                <IconComp
+                  color={
+                    isActive
+                      ? '#ffffff'
+                      : isDark
+                      ? item.color
+                      : item.color === '#94a3b8'
+                      ? '#64748b'
+                      : item.color
+                  }
+                  size={20}
+                />
+                <Text
+                  style={{
+                    fontWeight: '800',
+                    fontSize: 14,
+                    color: isActive
+                      ? '#ffffff'
+                      : isDark
+                      ? '#cbd5e1'
+                      : '#334155',
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
@@ -222,20 +227,36 @@ function CustomDrawerContent(props: any) {
           isDark ? 'border-slate-800/80' : 'border-slate-100'
         }`}
       >
-        <Pressable
+        <TouchableOpacity
           onPress={handleLogout}
-          className={`flex-row items-center gap-3 px-4 py-3.5 rounded-2xl border ${
-            isDark
-              ? 'bg-red-500/10 border-red-500/20'
-              : 'bg-red-50 border-red-100'
-          }`}
-          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          activeOpacity={0.7}
         >
-          <LogOut color="#ef4444" size={20} />
-          <Text className="text-red-600 dark:text-red-400 font-extrabold text-sm">
-            Sign Out
-          </Text>
-        </Pressable>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              marginHorizontal: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              borderRadius: 16,
+              borderWidth: 1,
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2',
+              borderColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2',
+            }}
+          >
+            <LogOut color="#ef4444" size={20} />
+            <Text 
+              style={{
+                color: isDark ? '#f87171' : '#dc2626',
+                fontWeight: '800',
+                fontSize: 14,
+              }}
+            >
+              Sign Out
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
       </View>
     </SafeAreaView>
@@ -245,6 +266,7 @@ function CustomDrawerContent(props: any) {
 export default function DrawerLayout() {
   const { user, loading } = useSelector((state: any) => state.auth);
   const { isDark } = useAppTheme();
+  const router = useRouter();
 
   if (loading) {
     return null;
@@ -260,6 +282,7 @@ export default function DrawerLayout() {
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
           headerShown: true,
+          swipeEnabled: false, // Prevents Android ImagePicker gesture leaks from locking the drawer open
           drawerStyle: {
             backgroundColor: isDark ? '#070e1e' : '#ffffff',
             width: 300,
@@ -277,19 +300,22 @@ export default function DrawerLayout() {
           },
           headerRight: () => {
             return (
-              <Pressable
+              <TouchableOpacity
                 onPress={() => router.push('/(drawer)/profile')}
-                className="mr-4 w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 items-center justify-center"
+                activeOpacity={0.7}
+                style={{ marginRight: 16 }}
               >
-                {user?.profilePhoto || user?.profile_photo ? (
-                  <Image
-                    source={{ uri: user.profilePhoto || user.profile_photo }}
-                    className="w-full h-full"
-                  />
-                ) : (
-                  <User size={20} color={isDark ? '#cbd5e1' : '#475569'} />
-                )}
-              </Pressable>
+                <View className="w-9 h-9 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 items-center justify-center">
+                  {user?.profilePhoto || user?.profile_photo ? (
+                    <Image
+                      source={{ uri: user.profilePhoto || user.profile_photo }}
+                      className="w-full h-full"
+                    />
+                  ) : (
+                    <User size={20} color={isDark ? '#cbd5e1' : '#475569'} />
+                  )}
+                </View>
+              </TouchableOpacity>
             );
           },
         }}

@@ -28,6 +28,7 @@ import {
 import { useAppTheme } from '@/context/ThemeContext';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { AppFooter } from '@/components/layout/Footer';
+import { SOSModule } from '@/components/ui/SOSModule';
 
 export default function MemberDashboard() {
   const router = useRouter();
@@ -103,6 +104,9 @@ export default function MemberDashboard() {
           </View>
         </View>
       </View>
+
+      {/* SOS Module Integration */}
+      <SOSModule />
 
       {/* 2. Referral Box */}
       <View className="px-4 mt-4">

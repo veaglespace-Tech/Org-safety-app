@@ -10,6 +10,7 @@ import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import '@/tasks/backgroundLocationTask';
 
 
 LogBox.ignoreLogs([

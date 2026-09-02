@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import {
   Shield,
@@ -28,6 +29,7 @@ import {
   Loader2,
 } from 'lucide-react-native';
 import { useSelector } from 'react-redux';
+import { API_BASE_URL, CLIENT_BASE_URL } from '@/config';
 import {
   useTriggerSosMutation,
   useUpdateSosLocationMutation,
@@ -35,8 +37,10 @@ import {
 } from '@/services/api/authApi';
 import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '@/components/layout/Footer';
+import { useGeoLocationTracker } from '@/hooks/useGeoLocationTracker';
+import { LiveLocationMap } from '@/components/ui/LiveLocationMap';
 
-export default function SOSScreen() {
+export function SOSModule() {
   const { user } = useSelector((state: any) => state.auth);
   const { isDark } = useAppTheme();
 
@@ -47,6 +51,10 @@ export default function SOSScreen() {
   const [isSosActive, setIsSosActive] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [tapWarning, setTapWarning] = useState<string | null>(null);
+  const locationState = useSelector((state: any) => state.location);
+  const [trackingToken, setTrackingToken] = useState<string | null>(null);
+  useGeoLocationTracker(trackingToken);
+
   const [location, setLocation] = useState<{
     lat: number;
     lng: number;
@@ -181,7 +189,7 @@ export default function SOSScreen() {
       `👤 *Name:* ${user?.name || 'Unknown'}\n` +
       `📱 *Phone:* ${user?.phone || 'N/A'}\n` +
       `🏢 *Organization:* ${orgName}\n\n` +
-      `📍 *Live GPS Location:*\n${locUrl || 'Location not available'}\n\n` +
+      `📍 *LIVE TRACKING:*\n${locUrl || 'Location not available'}\n\n` +
       `⚠️ *I need immediate help! Please check on me urgently.*`
     );
   };
@@ -224,7 +232,7 @@ export default function SOSScreen() {
 🚨 Emergency Contact: ${user?.emergencyContact || user?.emergency_contact || 'Not provided'}
 🏢 Organization: ${user?.organization?.name || user?.organizations?.name || 'Safety Portal'}
 
-📍 LATEST LIVE GPS LOCATION:
+📍 LATEST LIVE TRACKING LOCATION:
 ${locUrl || 'Location coordinates not available'}
 
 ⚠️ Immediate emergency assistance requested! Please check immediately.`;
@@ -262,11 +270,19 @@ ${locUrl || 'Location coordinates not available'}
       setStatus('success');
       setIsSosActive(true);
 
+      const newToken = user?.id ? `sos-${user.id}-${Date.now()}` : `sos-${Date.now()}`;
+      setTrackingToken(newToken);
+      AsyncStorage.setItem('tracking_token', newToken).catch(console.warn);
+
+      const liveTrackingUrl = `${CLIENT_BASE_URL}/live-tracking/${newToken}`;
+      const staticGoogleMapsUrl = locUrl;
+      const combinedLocationMessage = `📍 LIVE TRACKING: ${liveTrackingUrl}\n📍 STATIC MAP: ${staticGoogleMapsUrl}`;
+
       // 1. Automatically launch WhatsApp & Phone Call INSTANTLY (don't wait for backend)
-      triggerDirectEmergencyChannels(locUrl);
+      triggerDirectEmergencyChannels(combinedLocationMessage);
 
       // 2. Dispatch SOS to backend server in background (Sends automated emails)
-      (triggerSos as any)({ locationUrl: locUrl }).unwrap().catch((err: any) => {
+      (triggerSos as any)({ locationUrl: liveTrackingUrl || staticGoogleMapsUrl }).unwrap().catch((err: any) => {
         console.warn('Backend SOS trigger failed', err);
       });
 
@@ -279,7 +295,8 @@ ${locUrl || 'Location coordinates not available'}
             accuracy: Location.Accuracy.Balanced,
           });
           let newLocUrl = `https://maps.google.com/?q=${updatedLoc.coords.latitude},${updatedLoc.coords.longitude}`;
-          await (updateSosLocation as any)({ locationUrl: newLocUrl }).unwrap();
+          let updateUrl = liveTrackingUrl || newLocUrl;
+          await (updateSosLocation as any)({ locationUrl: updateUrl }).unwrap();
         } catch (e) {
           console.error('Failed to send periodic SOS location update', e);
         }
@@ -302,6 +319,8 @@ ${locUrl || 'Location coordinates not available'}
       }
       await (stopSos as any)({}).unwrap();
       setIsSosActive(false);
+      setTrackingToken(null);
+      AsyncStorage.removeItem('tracking_token').catch(console.warn);
       setStatus('idle');
       setTapWarning(null);
       Alert.alert('SOS Deactivated', 'Emergency mode has been cancelled.');
@@ -353,11 +372,8 @@ ${locUrl || 'Location coordinates not available'}
   const orgLogo = user?.organization?.logo || user?.organizations?.logo;
 
   return (
-    <ScrollView
-      className="flex-1 bg-slate-50 dark:bg-slate-950 w-full"
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
-      showsVerticalScrollIndicator={false}
-      scrollEnabled={!isHolding}
+    <View
+      className="flex-1 bg-slate-50 dark:bg-slate-950"
     >
       {/* 1. Top 3 Header Cards Row */}
       <View className="px-3.5 sm:px-4 pt-4">
@@ -374,7 +390,7 @@ ${locUrl || 'Location coordinates not available'}
                 resizeMode="contain"
               />
             ) : (
-              <View className="w-full h-full items-center justify-center bg-slate-900">
+              <View className="w-full h-full rounded-2xl items-center justify-center bg-slate-900">
                 <Shield color="#38bdf8" size={32} />
               </View>
             )}
@@ -460,14 +476,14 @@ ${locUrl || 'Location coordinates not available'}
                 }}
               />
 
-              {/* Main SOS Touch Button (Split for reliable Android rendering) */}
+              {/* Main SOS Touch Button */}
               {isSosActive ? (
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={handleStopSos}
-                  className="w-40 h-40 rounded-full items-center justify-center overflow-hidden bg-slate-950 border-4 border-rose-600"
+                  className="w-40 h-40 rounded-full items-center justify-center bg-slate-950 border-4 border-rose-600"
                 >
-                  <View className="items-center justify-center px-2 w-full h-full">
+                  <View className="items-center justify-center px-2">
                     {isTriggering || isStopping ? (
                       <ActivityIndicator size="large" color="#ffffff" />
                     ) : (
@@ -487,23 +503,28 @@ ${locUrl || 'Location coordinates not available'}
                   onPressIn={startHold}
                   onPressOut={cancelHold}
                   onPress={() => setTapWarning('Hold for 3 full seconds to activate SOS.')}
-                  className={`w-40 h-40 rounded-full items-center justify-center overflow-hidden ${
+                  className={`w-40 h-40 rounded-full items-center justify-center ${
                     isHolding ? 'bg-emerald-600' : 'bg-emerald-500'
                   }`}
                 >
-                  {isHolding && (
-                    <View
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${holdProgress}%`,
-                        backgroundColor: '#065f46',
-                      }}
-                    />
-                  )}
-                  <View className="items-center justify-center px-2 w-full h-full" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 }}>
+                  {/* Dedicated background wrapper with overflow hidden for the progress bar */}
+                  <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9999, overflow: 'hidden' }}>
+                    {isHolding && (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          height: `${holdProgress}%`,
+                          backgroundColor: '#065f46',
+                        }}
+                      />
+                    )}
+                  </View>
+
+                  {/* Content (Rendered after absolute view, so it naturally sits on top without zIndex bugs) */}
+                  <View className="items-center justify-center px-2 bg-transparent">
                     <AlertTriangle size={30} color="#ffffff" />
                     <Text className="text-white font-black text-lg tracking-widest mt-1 text-center">
                       {isHolding ? 'HOLDING...' : 'HOLD SOS'}
@@ -606,106 +627,7 @@ ${locUrl || 'Location coordinates not available'}
         </View>
       </View>
 
-      {/* 3. Real-Time GPS Location Card */}
-      <View className="px-3.5 sm:px-4 mt-4">
-        <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm dark:shadow-xl">
-          {/* Header */}
-          <View className="flex-row items-center justify-between gap-2 mb-3.5">
-            <View className="flex-row items-center gap-2 flex-1 shrink mr-2">
-              <MapPin size={18} color="#f43f5e" />
-              <Text className="text-slate-900 dark:text-white font-black text-sm shrink" numberOfLines={1}>
-                Live GPS Location
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={fetchLocation}
-              className="flex-row items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 active:bg-slate-200 dark:active:bg-slate-700"
-            >
-              <RefreshCw
-                size={12}
-                color="#f43f5e"
-                className={locLoading ? 'animate-spin' : ''}
-              />
-              <Text className="text-rose-500 dark:text-rose-400 text-xs font-bold">Refresh</Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* Location status badge */}
-          <View
-            className={`border rounded-2xl p-3 flex-row items-center justify-between gap-2 mb-3.5 ${
-              location
-                ? 'bg-emerald-500/10 border-emerald-500/20'
-                : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <View className="flex-row items-center gap-2 flex-1 shrink mr-2">
-              <CheckCircle2
-                size={16}
-                color={location ? '#10b981' : '#94a3b8'}
-              />
-              <Text
-                className={`text-xs font-bold shrink ${
-                  location ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
-                }`}
-                numberOfLines={1}
-              >
-                {location ? 'Live Location Locked' : locationErrorMsg || 'Locating GPS...'}
-              </Text>
-            </View>
-            {location && (
-              <View className="bg-emerald-500/20 px-2 py-0.5 rounded-md shrink-0">
-                <Text className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-                  ±{Math.round(location.accuracy)}m Accuracy
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Latitude / Longitude */}
-          <View className="flex-row gap-2.5 mb-3.5">
-            <View className="flex-1 bg-slate-100 dark:bg-slate-950 rounded-2xl p-3 border border-slate-200 dark:border-slate-800">
-              <Text className="text-slate-400 dark:text-slate-500 text-[9px] uppercase font-bold tracking-wider mb-0.5">
-                LATITUDE
-              </Text>
-              <Text className="text-slate-900 dark:text-white font-mono font-bold text-sm" numberOfLines={1}>
-                {location ? location.lat.toFixed(6) : '---'}
-              </Text>
-            </View>
-
-            <View className="flex-1 bg-slate-100 dark:bg-slate-950 rounded-2xl p-3 border border-slate-200 dark:border-slate-800">
-              <Text className="text-slate-400 dark:text-slate-500 text-[9px] uppercase font-bold tracking-wider mb-0.5">
-                LONGITUDE
-              </Text>
-              <Text className="text-slate-900 dark:text-white font-mono font-bold text-sm" numberOfLines={1}>
-                {location ? location.lng.toFixed(6) : '---'}
-              </Text>
-            </View>
-          </View>
-
-          {/* View on Google Maps Button */}
-          <TouchableOpacity
-            onPress={() => {
-              if (location) {
-                Linking.openURL(
-                  `https://maps.google.com/?q=${location.lat},${location.lng}`
-                );
-              }
-            }}
-            disabled={!location}
-            activeOpacity={0.8}
-            className={`w-full flex-row items-center justify-center gap-2 py-3 rounded-2xl border ${
-              location
-                ? 'bg-slate-900 dark:bg-slate-800 border-slate-800 dark:border-slate-700 active:opacity-90'
-                : 'bg-slate-200 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800 opacity-50'
-            }`}
-          >
-            <ExternalLink size={15} color="#ffffff" />
-            <Text className="text-white font-bold text-xs">
-              View Live Map on Google Maps
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* 4. Auto-Filled Profile Information Card */}
       <View className="px-3.5 sm:px-4 mt-4">
@@ -818,10 +740,6 @@ ${locUrl || 'Location coordinates not available'}
         </View>
       </View>
 
-      {/* 6. Footer */}
-      <View className="px-3.5 sm:px-4 mt-auto">
-        <AppFooter />
-      </View>
-    </ScrollView>
+    </View>
   );
 }

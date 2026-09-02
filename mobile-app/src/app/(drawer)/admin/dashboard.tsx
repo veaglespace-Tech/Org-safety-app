@@ -43,6 +43,7 @@ import { BadgePill } from '@/components/ui/BadgePill';
 import { ActionModal } from '@/components/ui/ActionModal';
 import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '@/components/layout/Footer';
+import { SOSModule } from '@/components/ui/SOSModule';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -236,6 +237,9 @@ export default function AdminDashboard() {
             </View>
           </View>
         </View>
+
+        {/* SOS Module Integration */}
+        <SOSModule />
 
         {/* 2. Stat & Referral Box */}
         <View className="px-4 mt-4">
