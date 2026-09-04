@@ -335,25 +335,6 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="sos"
-          options={{
-            headerTitle: () => (
-              <View className="flex-row items-center gap-2" style={{ minWidth: 250, flex: 1 }}>
-                <Shield color="#ef4444" size={20} />
-                <Text
-                  className={`font-extrabold text-lg ${
-                    isDark ? 'text-white' : 'text-slate-900'
-                  }`}
-                  style={{ flexShrink: 0 }}
-                >
-                  तिची{'\u00A0'}सुरक्षा
-                </Text>
-              </View>
-            ),
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
           name="emergency-emails"
           options={{
             headerTitle: 'Emergency Emails',

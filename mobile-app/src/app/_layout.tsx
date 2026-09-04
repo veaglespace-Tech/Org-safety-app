@@ -12,11 +12,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import '@/tasks/backgroundLocationTask';
 
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 LogBox.ignoreLogs([
   '[Reanimated] Writing to `value` during component render',
   '[Reanimated] Reading from `value` during component render',
 ]);
+
+// Suppress Reanimated strict mode warnings
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 function ThemeAwareStatusBar() {
   const { isDark } = useAppTheme();
