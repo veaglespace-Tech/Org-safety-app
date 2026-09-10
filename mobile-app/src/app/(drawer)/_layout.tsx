@@ -83,7 +83,7 @@ function CustomDrawerContent(props: any) {
             className={`w-14 h-14 rounded-2xl overflow-hidden items-center justify-center border-2 ${
               isDark
                 ? 'bg-slate-800 border-slate-700'
-                : 'bg-white border-slate-200 shadow-sm'
+                : 'bg-white border-slate-200'
             }`}
           >
             {user?.profilePhoto || user?.profile_photo ? (
@@ -131,7 +131,7 @@ function CustomDrawerContent(props: any) {
             className={`mt-3.5 flex-row items-center gap-2 rounded-xl px-3 py-2 border ${
               isDark
                 ? 'bg-slate-800/90 border-slate-700'
-                : 'bg-white border-slate-200 shadow-sm'
+                : 'bg-white border-slate-200'
             }`}
           >
             {user?.organization?.logo || user?.organizations?.logo ? (

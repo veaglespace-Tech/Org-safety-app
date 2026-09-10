@@ -30,19 +30,6 @@ function ThemeAwareStatusBar() {
   return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }
 
-function AppNavigation() {
-  return (
-    <>
-      <ThemeAwareStatusBar />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-      </Stack>
-    </>
-  );
-}
-
 export default function RootLayout() {
   useEffect(() => {
     store.dispatch(loadSession());
@@ -53,7 +40,12 @@ export default function RootLayout() {
       <ThemeProvider>
         <SafeAreaProvider>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <AppNavigation />
+            <ThemeAwareStatusBar />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+            </Stack>
           </GestureHandlerRootView>
         </SafeAreaProvider>
       </ThemeProvider>

@@ -2,14 +2,14 @@
   "expo": {
     "name": "तिची सुरक्षा",
     "slug": "mobile-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/tich-surksha-woman.png",
     "scheme": "tichisuraksha",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
-      "buildNumber": "5",
+      "buildNumber": "10",
       "icon": "./assets/images/tich-surksha-woman.png",
       "supportsTablet": false,
       "requireFullScreen": true,
@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 1,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"

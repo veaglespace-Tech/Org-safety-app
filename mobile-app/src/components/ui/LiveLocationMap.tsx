@@ -40,8 +40,8 @@ export const LiveLocationMap: React.FC<LiveLocationMapProps> = ({
   }, [pulseAnim]);
 
   const hasLocation = latitude != null && longitude != null;
-  const displayLat = hasLocation ? latitude : 18.5204;
-  const displayLng = hasLocation ? longitude : 73.8567;
+  const displayLat = hasLocation ? latitude : 0;
+  const displayLng = hasLocation ? longitude : 0;
   const displayAcc = accuracy || 30;
 
   // Use Leaflet for a highly reliable, API-key-free map using OpenStreetMap
