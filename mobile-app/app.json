@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"
@@ -81,7 +81,8 @@
           "cameraPermission": "तिची सुरक्षा requires camera access to allow you to take and upload a profile picture.",
           "microphonePermission": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

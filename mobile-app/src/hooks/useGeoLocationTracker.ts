@@ -102,14 +102,14 @@ export const useGeoLocationTracker = (token: string | null) => {
       try {
         let initialLocation = await Location.getLastKnownPositionAsync();
         if (!initialLocation) {
-            initialLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          initialLocation = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         }
         if (initialLocation) {
           const { latitude, longitude, accuracy, speed, heading } = initialLocation.coords;
           const timestamp = initialLocation.timestamp;
-          
+
           dispatch(setLocation({ latitude, longitude, accuracy: accuracy || 0, speed, heading, timestamp }));
-          
+
           await validateAndSendLocation(
             { latitude, longitude, accuracy: accuracy || 0, speed, heading, timestamp },
             token,
@@ -149,7 +149,7 @@ export const useGeoLocationTracker = (token: string | null) => {
           socketRef.current,
           false
         );
-        
+
         console.log(`🟢 [SOCKET EMIT] Payload sent successfully? ${success ? 'YES' : 'NO (Check distance/accuracy filters)'}\n\n`);
       }
     );
@@ -180,7 +180,7 @@ export const useGeoLocationTracker = (token: string | null) => {
       watchSubscriptionRef.current.remove();
       watchSubscriptionRef.current = null;
     }
-    
+
     Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).then((isTracking) => {
       if (isTracking) {
         Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch(err => console.log('Task stop error:', err));
