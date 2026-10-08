@@ -1,6 +1,6 @@
 const { io } = require('socket.io-client');
 
-const SOCKET_SERVER_URL = 'http://localhost:5001'; // Assuming server is running on 5001
+const SOCKET_SERVER_URL = 'https://tichisuraksha.veaglespace.com'; // Testing against live server
 const testToken = 'SOS-TEST-TOKEN';
 
 console.log('Testing live tracking socket server...');

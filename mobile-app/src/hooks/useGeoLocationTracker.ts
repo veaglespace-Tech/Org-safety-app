@@ -9,7 +9,7 @@ import { API_BASE_URL } from '../config';
 import { BACKGROUND_LOCATION_TASK } from '@/tasks/backgroundLocationTask';
 import { validateAndSendLocation, clearLocationMemory } from '../utils/locationSender';
 
-const SOCKET_SERVER_URL = API_BASE_URL || 'http://localhost:5001';
+const SOCKET_SERVER_URL = API_BASE_URL || 'https://tichisuraksha.veaglespace.com';
 const HEARTBEAT_INTERVAL = 30000;
 
 export const useGeoLocationTracker = (token: string | null) => {
@@ -158,7 +158,7 @@ export const useGeoLocationTracker = (token: string | null) => {
     if (bgStatus === 'granted') {
       try {
         await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-          accuracy: Location.Accuracy.High,
+          accuracy: Location.Accuracy.Balanced,
           timeInterval: 5000,
           distanceInterval: 5,
           showsBackgroundLocationIndicator: true,

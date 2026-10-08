@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { io } from 'socket.io-client';
 import { setLocation, setTrackingState, setLocationError, clearLocation } from '@/store/slices/locationSlice';
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : 'http://localhost:5001';
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : 'https://tichisuraksha.veaglespace.com';
 const SOCKET_SERVER_URL = process.env.NEXT_PUBLIC_SOCKET_URL || apiBaseUrl;
 
 // Maximum acceptable accuracy in meters — readings worse than this are discarded

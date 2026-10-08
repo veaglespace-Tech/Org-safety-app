@@ -1,4 +1,4 @@
-const DEFAULT_CLIENT_BASE_URL = "https://atty.veaglespace.com";
+const DEFAULT_CLIENT_BASE_URL = "https://tichisuraksha.veaglespace.com";
 const DEFAULT_API_BASE_URL = `${DEFAULT_CLIENT_BASE_URL}/api`;
 
 const trimTrailingSlash = (value) => String(value || "").trim().replace(/\/+$/, "");

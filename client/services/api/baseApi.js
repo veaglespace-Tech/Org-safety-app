@@ -4,7 +4,7 @@ import { normalizeRole, ROLES, hasPermission, PERMISSIONS } from "@/utils/roles"
 import { API_BASE_URL as CONFIG_API_BASE_URL } from "@/config";
 
 const DEFAULT_LOCAL_API_URL = "http://localhost:5001/api";
-const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://atty.veaglespace.com/api");
+const DEFAULT_PRODUCTION_API_URL = String(CONFIG_API_BASE_URL || "https://tichisuraksha.veaglespace.com/api");
 
 const trimTrailingSlash = (url) => String(url || "").trim().replace(/\/+$/, "");
 
@@ -28,23 +28,7 @@ const resolveApiBaseUrl = () => {
   if (explicitApiUrl) {
     return explicitApiUrl;
   }
-
-  const localApiUrl = trimTrailingSlash(process.env.NEXT_PUBLIC_API_URL_LOCAL)
-    || DEFAULT_LOCAL_API_URL;
-  const productionApiUrl = trimTrailingSlash(process.env.NEXT_PUBLIC_API_URL_PROD)
-    || DEFAULT_PRODUCTION_API_URL;
-
-  if (typeof window !== "undefined") {
-    if (isLocalHost(window.location.hostname)) {
-      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        return `http://${window.location.hostname}:5001/api`;
-      }
-      return localApiUrl;
-    }
-    return productionApiUrl;
-  }
-
-  return process.env.NODE_ENV === "production" ? productionApiUrl : localApiUrl;
+  return DEFAULT_PRODUCTION_API_URL;
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();

@@ -17,9 +17,9 @@ const LiveLocationMap = dynamic(() => import('@/components/ui/LiveLocationMap'),
   ),
 });
 
-// Extract base URL from API URL (e.g. "https://api.example.com/api" -> "https://api.example.com")
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).origin : 'http://localhost:5001';
-const SOCKET_SERVER_URL = process.env.NEXT_PUBLIC_SOCKET_URL || apiBaseUrl;
+import { CLIENT_BASE_URL } from '@/config';
+
+const SOCKET_SERVER_URL = process.env.NEXT_PUBLIC_SOCKET_URL || CLIENT_BASE_URL;
 
 const LiveTrackingViewer = () => {
   const params = useParams();
