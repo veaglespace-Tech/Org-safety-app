@@ -756,11 +756,11 @@ ${locUrl || 'Location coordinates not available'}
               </View>
               
               <Text className="text-xl font-black text-slate-900 dark:text-white text-center mb-3">
-                Location Tracking Required
+                Background Location Required
               </Text>
               
               <Text className="text-slate-600 dark:text-slate-300 text-sm text-center leading-relaxed mb-8">
-                <Text className="font-bold text-slate-800 dark:text-slate-100">तिची सुरक्षा</Text> collects location data to enable live tracking with your emergency contacts even when the app is closed or not in use.
+                <Text className="font-bold text-slate-800 dark:text-slate-100">तिची सुरक्षा</Text> collects location data to enable live tracking with your emergency contacts during an active SOS, even when the app is closed or not in use.
               </Text>
               
               <View className="flex-row gap-3">

@@ -38,11 +38,15 @@ export const useGeoLocationTracker = (token: string | null) => {
           visible: true,
           onAccept: () => {
             setDisclosureConfig(null);
-            resolve(true);
+            setTimeout(() => {
+              resolve(true);
+            }, 600);
           },
           onDecline: () => {
             setDisclosureConfig(null);
-            resolve(false);
+            setTimeout(() => {
+              resolve(false);
+            }, 600);
           }
         });
       });

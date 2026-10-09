@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 7,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"
