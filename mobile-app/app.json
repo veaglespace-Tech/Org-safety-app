@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"
@@ -82,7 +82,8 @@
           "microphonePermission": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

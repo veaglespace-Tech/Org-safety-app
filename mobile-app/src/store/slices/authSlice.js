@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import {
   getMembershipForOrg,
   getUserOrganizationId,
@@ -53,7 +54,7 @@ const COOKIE_SESSION_TOKEN = "__cookie_session__";
 export const loadSession = createAsyncThunk('auth/loadSession', async () => {
   try {
     const userRaw = await AsyncStorage.getItem("user");
-    const tokenRaw = await AsyncStorage.getItem("token");
+    const tokenRaw = await SecureStore.getItemAsync("token");
     const redirectPathRaw = await AsyncStorage.getItem("redirectPath");
     
     let user = null;
@@ -73,12 +74,12 @@ const persistSessionUser = async (user, token) => {
   try {
     if (!user) {
       await AsyncStorage.removeItem("user");
-      await AsyncStorage.removeItem("token");
+      await SecureStore.deleteItemAsync("token");
       return;
     }
     await AsyncStorage.setItem("user", JSON.stringify(user));
     if (token) {
-      await AsyncStorage.setItem("token", String(token));
+      await SecureStore.setItemAsync("token", String(token));
     }
   } catch (e) {}
 };
@@ -96,7 +97,7 @@ const persistRedirectPath = async (redirectPath) => {
 const clearPersistedSession = async () => {
   try {
     await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
+    await SecureStore.deleteItemAsync("token");
     await AsyncStorage.removeItem("status");
     await AsyncStorage.removeItem("redirectPath");
     await AsyncStorage.removeItem("admin");

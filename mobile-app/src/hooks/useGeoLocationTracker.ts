@@ -1,9 +1,9 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { io, Socket } from 'socket.io-client';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { setLocation, setTrackingState, setLocationError, clearLocation } from '../store/slices/locationSlice';
 import { API_BASE_URL } from '../config';
 import { BACKGROUND_LOCATION_TASK } from '@/tasks/backgroundLocationTask';
@@ -17,41 +17,54 @@ export const useGeoLocationTracker = (token: string | null) => {
   const socketRef = useRef<Socket | null>(null);
   const watchSubscriptionRef = useRef<Location.LocationSubscription | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const [disclosureConfig, setDisclosureConfig] = useState<{
+    visible: boolean;
+    onAccept: () => void;
+    onDecline: () => void;
+  } | null>(null);
 
-  const startTracking = useCallback(async () => {
-    if (!token) return;
+  const requestPermissions = useCallback(async () => {
+    // 1. Check existing permissions
+    const { status: existingBgStatus } = await Location.getBackgroundPermissionsAsync();
+    const { status: existingFgStatus } = await Location.getForegroundPermissionsAsync();
+    
+    let bgStatus = existingBgStatus;
+    let fgStatus = existingFgStatus;
 
-    // 1. Request Permissions
-    const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
-    if (fgStatus !== 'granted') {
-      dispatch(setLocationError('Foreground permission to access location was denied'));
-      return;
-    }
-
-    let bgStatus = 'undetermined';
-    if (Platform.OS === 'android') {
-      const { status: existingBgStatus } = await Location.getBackgroundPermissionsAsync();
-      if (existingBgStatus !== 'granted') {
-        await new Promise((resolve) => {
-          Alert.alert(
-            "Background Location Required",
-            "तिची सुरक्षा collects location data to enable live tracking with your emergency contacts even when the app is closed or not in use during an active SOS.",
-            [
-              { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-              { text: "I Understand", onPress: () => resolve(true) }
-            ],
-            { cancelable: false }
-          );
-        }).then(async (proceed) => {
-          if (proceed) {
-            const { status } = await Location.requestBackgroundPermissionsAsync();
-            bgStatus = status;
+    // 2. Show Prominent Disclosure BEFORE any system permission prompt if background is not granted
+    if (bgStatus !== 'granted') {
+      const proceedWithPermissions = await new Promise((resolve) => {
+        setDisclosureConfig({
+          visible: true,
+          onAccept: () => {
+            setDisclosureConfig(null);
+            resolve(true);
+          },
+          onDecline: () => {
+            setDisclosureConfig(null);
+            resolve(false);
           }
         });
-      } else {
-        bgStatus = 'granted';
+      });
+
+      if (!proceedWithPermissions) {
+        dispatch(setLocationError('Location tracking consent was declined.'));
+        return false;
       }
-    } else {
+    }
+
+    // 3. Request Foreground Permissions (OS Prompt 1 if needed)
+    if (fgStatus !== 'granted') {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      fgStatus = status;
+      if (fgStatus !== 'granted') {
+        dispatch(setLocationError('Foreground permission to access location was denied'));
+        return false;
+      }
+    }
+
+    // 4. Request Background Permissions (OS Prompt 2 if needed)
+    if (bgStatus !== 'granted') {
       const { status } = await Location.requestBackgroundPermissionsAsync();
       bgStatus = status;
     }
@@ -60,7 +73,18 @@ export const useGeoLocationTracker = (token: string | null) => {
       console.warn('Background location permission denied. Tracking will only work in foreground.');
     }
 
-    const authToken = await AsyncStorage.getItem('auth_token') || '';
+    return fgStatus === 'granted';
+  }, [dispatch]);
+
+  const startTracking = useCallback(async () => {
+    if (!token) return;
+
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    // Permissions acquired, proceed with tracking
+
+    const authToken = await SecureStore.getItemAsync('token') || '';
 
     // 2. Initialize Socket.io connection
     if (!socketRef.current) {
@@ -212,5 +236,5 @@ export const useGeoLocationTracker = (token: string | null) => {
     };
   }, [token, startTracking, stopTracking]);
 
-  return { startTracking, stopTracking };
+  return { startTracking, stopTracking, disclosureConfig, requestPermissions };
 };
