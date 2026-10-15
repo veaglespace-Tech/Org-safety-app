@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/Button';
 import { ROLES } from '@/utils/roles';
 import { useAppTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { ProminentDisclosureModal } from '@/components/ui/ProminentDisclosureModal';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GENDERS = [
@@ -68,6 +69,8 @@ export default function ProfileSettingsPage() {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'org'>('profile');
   const [showBloodGroupModal, setShowBloodGroupModal] = useState(false);
+  const [showMediaDisclosure, setShowMediaDisclosure] = useState(false);
+  const pendingMediaPickerRef = React.useRef<'profile' | 'org' | null>(null);
 
   // Profile Form State
   const [formData, setFormData] = useState({
@@ -128,12 +131,44 @@ export default function ProfileSettingsPage() {
     }
   }, [currentUser, currentOrg]);
 
-  const pickProfileImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera roll permission is needed to update your photo.');
-      return;
+  const requestMediaPermissionAndPick = async (target: 'profile' | 'org') => {
+    try {
+      const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (status === 'granted') {
+        if (target === 'profile') launchProfileImagePicker();
+        else launchOrgImagePicker();
+        return;
+      }
+      pendingMediaPickerRef.current = target;
+      setShowMediaDisclosure(true);
+    } catch (e) {
+      pendingMediaPickerRef.current = target;
+      setShowMediaDisclosure(true);
     }
+  };
+
+  const handleMediaDisclosureAccept = async () => {
+    setShowMediaDisclosure(false);
+    const target = pendingMediaPickerRef.current;
+    setTimeout(async () => {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status === 'granted') {
+          if (target === 'profile') launchProfileImagePicker();
+          else if (target === 'org') launchOrgImagePicker();
+        } else {
+          Alert.alert('Permission Denied', 'Camera roll permission is needed to update your photo.');
+        }
+      } catch (err) {
+        console.warn('Photo library permission error:', err);
+      }
+    }, 350);
+  };
+
+  const pickProfileImage = () => requestMediaPermissionAndPick('profile');
+  const pickOrgImage = () => requestMediaPermissionAndPick('org');
+
+  const launchProfileImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -161,12 +196,7 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  const pickOrgImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera roll permission is needed to update the organization logo.');
-      return;
-    }
+  const launchOrgImagePicker = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -577,6 +607,15 @@ export default function ProfileSettingsPage() {
           })}
         </View>
       </ActionModal>
+
+      {/* Photo Library Prominent Disclosure Modal */}
+      <ProminentDisclosureModal
+        visible={showMediaDisclosure}
+        type="media_library"
+        onAccept={handleMediaDisclosureAccept}
+        onDecline={() => setShowMediaDisclosure(false)}
+        isDark={isDark}
+      />
     </View>
     </KeyboardAvoidingView>
   );

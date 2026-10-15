@@ -47,7 +47,11 @@ export const getLocalApiUrl = () => {
 };
 
 const resolveBaseUrl = () => {
-  // Hardcoded to strictly use the live server based on user request
+  // On Web (browser testing), use the Metro dev proxy ('/api') to completely bypass browser CORS.
+  // On Native Mobile (Android/iOS), connect directly to the live server.
+  if (Platform.OS === 'web') {
+    return '/api';
+  }
   return LIVE_API_URL;
 };
 

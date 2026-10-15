@@ -16,74 +16,93 @@ export const useGeoLocationTracker = (token: string | null) => {
   const dispatch = useDispatch();
   const socketRef = useRef<Socket | null>(null);
   const watchSubscriptionRef = useRef<Location.LocationSubscription | null>(null);
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [disclosureConfig, setDisclosureConfig] = useState<{
     visible: boolean;
+    type: 'foreground_location' | 'background_location';
     onAccept: () => void;
     onDecline: () => void;
   } | null>(null);
 
-  const requestPermissions = useCallback(async () => {
-    // 1. Check existing permissions
-    const { status: existingBgStatus } = await Location.getBackgroundPermissionsAsync();
-    const { status: existingFgStatus } = await Location.getForegroundPermissionsAsync();
-    
-    let bgStatus = existingBgStatus;
-    let fgStatus = existingFgStatus;
+  const requestPermissions = useCallback(async (opts?: { requestBackground?: boolean }) => {
+    try {
+      // 1. Check existing foreground permissions
+      const { status: existingFgStatus } = await Location.getForegroundPermissionsAsync();
+      let fgStatus = existingFgStatus;
 
-    // 2. Show Prominent Disclosure BEFORE any system permission prompt if background is not granted
-    if (bgStatus !== 'granted') {
-      const proceedWithPermissions = await new Promise((resolve) => {
-        setDisclosureConfig({
-          visible: true,
-          onAccept: () => {
-            setDisclosureConfig(null);
-            setTimeout(() => {
-              resolve(true);
-            }, 600);
-          },
-          onDecline: () => {
-            setDisclosureConfig(null);
-            setTimeout(() => {
-              resolve(false);
-            }, 600);
-          }
-        });
-      });
-
-      if (!proceedWithPermissions) {
-        dispatch(setLocationError('Location tracking consent was declined.'));
-        return false;
-      }
-    }
-
-    // 3. Request Foreground Permissions (OS Prompt 1 if needed)
-    if (fgStatus !== 'granted') {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      fgStatus = status;
+      // 2. Show Foreground Prominent Disclosure BEFORE foreground system prompt if needed
       if (fgStatus !== 'granted') {
-        dispatch(setLocationError('Foreground permission to access location was denied'));
-        return false;
+        const proceedFg = await new Promise<boolean>((resolve) => {
+          setDisclosureConfig({
+            visible: true,
+            type: 'foreground_location',
+            onAccept: () => {
+              setDisclosureConfig(null);
+              setTimeout(() => resolve(true), 350);
+            },
+            onDecline: () => {
+              setDisclosureConfig(null);
+              setTimeout(() => resolve(false), 350);
+            },
+          });
+        });
+
+        if (!proceedFg) {
+          dispatch(setLocationError('Foreground location tracking consent was declined.'));
+          return false;
+        }
+
+        // Request Foreground Permissions (OS Prompt 1)
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        fgStatus = status;
+        if (fgStatus !== 'granted') {
+          dispatch(setLocationError('Foreground permission to access location was denied.'));
+          return false;
+        }
       }
-    }
 
-    // 4. Request Background Permissions (OS Prompt 2 if needed)
-    if (bgStatus !== 'granted') {
-      const { status } = await Location.requestBackgroundPermissionsAsync();
-      bgStatus = status;
-    }
+      // 3. Request Background Permissions ONLY if explicitly needed (e.g. during active SOS)
+      // Must be immediately preceded by a dedicated Background Prominent Disclosure
+      if (opts?.requestBackground && Platform.OS !== 'web' && typeof Location.getBackgroundPermissionsAsync === 'function') {
+        const { status: existingBgStatus } = await Location.getBackgroundPermissionsAsync();
+        let bgStatus = existingBgStatus;
 
-    if (bgStatus !== 'granted') {
-      console.warn('Background location permission denied. Tracking will only work in foreground.');
-    }
+        if (bgStatus !== 'granted') {
+          const proceedBg = await new Promise<boolean>((resolve) => {
+            setDisclosureConfig({
+              visible: true,
+              type: 'background_location',
+              onAccept: () => {
+                setDisclosureConfig(null);
+                setTimeout(() => resolve(true), 350);
+              },
+              onDecline: () => {
+                setDisclosureConfig(null);
+                setTimeout(() => resolve(false), 350);
+              },
+            });
+          });
 
-    return fgStatus === 'granted';
+          if (proceedBg && typeof Location.requestBackgroundPermissionsAsync === 'function') {
+            // Request Background Permissions (OS Prompt 2)
+            const { status } = await Location.requestBackgroundPermissionsAsync();
+            bgStatus = status;
+          }
+        }
+      }
+
+      return fgStatus === 'granted';
+    } catch (err) {
+      console.warn('Error in requestPermissions flow:', err);
+      return false;
+    }
   }, [dispatch]);
 
   const startTracking = useCallback(async () => {
     if (!token) return;
 
-    const hasPermission = await requestPermissions();
+    // Active SOS tracking: request permissions with background disclosure
+    const hasPermission = await requestPermissions({ requestBackground: true });
     if (!hasPermission) return;
 
     // Permissions acquired, proceed with tracking
@@ -182,22 +201,25 @@ export const useGeoLocationTracker = (token: string | null) => {
       }
     );
 
-    // 6. Start Background Geolocation Task
-    if (bgStatus === 'granted') {
+    // 6. Start Background Geolocation Task if on native platform and background permission is granted
+    if (Platform.OS !== 'web' && typeof Location.getBackgroundPermissionsAsync === 'function') {
       try {
-        await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 5000,
-          distanceInterval: 5,
-          showsBackgroundLocationIndicator: true,
-          foregroundService: {
-            notificationTitle: 'तिची सुरक्षा SOS Active',
-            notificationBody: 'Your live location is being shared with emergency contacts.',
-            notificationColor: '#ef4444',
-          },
-        });
+        const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
+        if (bgStatus === 'granted' && typeof Location.startLocationUpdatesAsync === 'function') {
+          await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000,
+            distanceInterval: 5,
+            showsBackgroundLocationIndicator: true,
+            foregroundService: {
+              notificationTitle: 'तिची सुरक्षा SOS Active',
+              notificationBody: 'Your live location is being shared with emergency contacts.',
+              notificationColor: '#ef4444',
+            },
+          });
+        }
       } catch (err) {
-        console.warn('Background tracking not supported in this environment (likely Expo Go). Foreground tracking will continue to work.', err);
+        console.warn('Background tracking not supported or denied. Foreground tracking will continue.', err);
       }
     }
 
@@ -209,11 +231,17 @@ export const useGeoLocationTracker = (token: string | null) => {
       watchSubscriptionRef.current = null;
     }
 
-    Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).then((isTracking) => {
-      if (isTracking) {
-        Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch(err => console.log('Task stop error:', err));
-      }
-    });
+    if (Platform.OS !== 'web' && typeof Location.hasStartedLocationUpdatesAsync === 'function') {
+      Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK)
+        .then((isTracking) => {
+          if (isTracking && typeof Location.stopLocationUpdatesAsync === 'function') {
+            Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch((err) =>
+              console.log('Task stop error:', err)
+            );
+          }
+        })
+        .catch(() => {});
+    }
 
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current);

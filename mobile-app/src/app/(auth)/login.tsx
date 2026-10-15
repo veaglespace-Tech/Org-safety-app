@@ -76,8 +76,15 @@ export default function LoginScreen() {
 
       const result = await userSignIn(payload).unwrap();
       dispatch(setSession(result));
-      // Routing is handled by the useEffect watching auth state
+
+      // Navigate directly using the returned user data
+      const target = getDashboardRoute(
+        result?.user?.role || result?.user?.currentRole,
+        result?.user?.dashboardPath
+      );
+      router.replace(target as any);
     } catch (err: any) {
+      console.warn('Login error details:', JSON.stringify(err));
       const errorMsg =
         err?.data?.error ||
         err?.data?.message ||

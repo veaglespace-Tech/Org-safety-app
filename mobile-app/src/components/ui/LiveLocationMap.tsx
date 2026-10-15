@@ -163,7 +163,7 @@ export const LiveLocationMap: React.FC<LiveLocationMapProps> = ({
         <WebView
           ref={webViewRef}
           source={{ html: leafletHTML }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}

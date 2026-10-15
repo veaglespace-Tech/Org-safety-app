@@ -1,20 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, X, Check, RefreshCcw } from 'lucide-react-native';
+import { ProminentDisclosureModal } from '@/components/ui/ProminentDisclosureModal';
 
 export default function AttendanceFaceCaptureModal({ visible, onClose, onCapture, isDark }) {
   const [loading, setLoading] = useState(false);
   const [photoUri, setPhotoUri] = useState(null);
   const [photoBase64, setPhotoBase64] = useState(null);
+  const [showCameraDisclosure, setShowCameraDisclosure] = useState(false);
 
-  const requestPermissionAndOpenCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Sorry, we need camera permissions to make this work!');
-      return;
+  const openCameraWithPermission = async () => {
+    try {
+      const { status: existingStatus } = await ImagePicker.getCameraPermissionsAsync();
+      if (existingStatus === 'granted') {
+        launchCamera();
+        return;
+      }
+      setShowCameraDisclosure(true);
+    } catch (e) {
+      setShowCameraDisclosure(true);
     }
+  };
 
+  const handleDisclosureAccept = async () => {
+    setShowCameraDisclosure(false);
+    setTimeout(async () => {
+      try {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status === 'granted') {
+          launchCamera();
+        } else {
+          Alert.alert('Permission Denied', 'Camera permission is required to capture a selfie for attendance verification.');
+        }
+      } catch (err) {
+        console.warn('Camera permission request error:', err);
+      }
+    }, 350);
+  };
+
+  const launchCamera = async () => {
     setLoading(true);
     try {
       const result = await ImagePicker.launchCameraAsync({
@@ -39,7 +64,7 @@ export default function AttendanceFaceCaptureModal({ visible, onClose, onCapture
   const handleRetake = () => {
     setPhotoUri(null);
     setPhotoBase64(null);
-    requestPermissionAndOpenCamera();
+    openCameraWithPermission();
   };
 
   const handleSubmit = () => {
@@ -51,71 +76,83 @@ export default function AttendanceFaceCaptureModal({ visible, onClose, onCapture
   const handleClose = () => {
     setPhotoUri(null);
     setPhotoBase64(null);
+    setShowCameraDisclosure(false);
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View className="flex-1 bg-black/60 justify-center items-center px-4">
-        <View className={`w-full max-w-sm rounded-3xl p-6 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Selfie Verification
-            </Text>
-            <TouchableOpacity onPress={handleClose} className="p-2">
-              <X size={24} color={isDark ? '#94a3b8' : '#64748b'} />
-            </TouchableOpacity>
-          </View>
-
-          {!photoUri ? (
-            <View className="items-center justify-center py-10">
-              <TouchableOpacity
-                onPress={requestPermissionAndOpenCamera}
-                disabled={loading}
-                className="w-32 h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mb-4 border-2 border-blue-200 dark:border-blue-800"
-              >
-                {loading ? (
-                  <ActivityIndicator size="large" color="#3b82f6" />
-                ) : (
-                  <Camera size={48} color="#3b82f6" />
-                )}
+    <>
+      <Modal visible={visible} animationType="slide" transparent>
+        <View className="flex-1 bg-black/60 justify-center items-center px-4">
+          <View className={`w-full max-w-sm rounded-3xl p-6 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Selfie Verification
+              </Text>
+              <TouchableOpacity onPress={handleClose} className="p-2">
+                <X size={24} color={isDark ? '#94a3b8' : '#64748b'} />
               </TouchableOpacity>
-              <Text className={`text-center font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Tap to capture a selfie
-              </Text>
-              <Text className={`text-center text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Please ensure your face is clearly visible
-              </Text>
             </View>
-          ) : (
-            <View className="items-center">
-              <View className="w-48 h-48 rounded-full overflow-hidden mb-6 border-4 border-slate-200 dark:border-slate-700">
-                <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} />
-              </View>
 
-              <View className="flex-row gap-4 w-full">
+            {!photoUri ? (
+              <View className="items-center justify-center py-10">
                 <TouchableOpacity
-                  onPress={handleRetake}
-                  className="flex-1 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 items-center justify-center flex-row gap-2"
+                  onPress={openCameraWithPermission}
+                  disabled={loading}
+                  className="w-32 h-32 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mb-4 border-2 border-blue-200 dark:border-blue-800"
                 >
-                  <RefreshCcw size={18} color={isDark ? '#cbd5e1' : '#475569'} />
-                  <Text className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                    Retake
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator size="large" color="#3b82f6" />
+                  ) : (
+                    <Camera size={48} color="#3b82f6" />
+                  )}
                 </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSubmit}
-                  className="flex-1 py-3.5 rounded-2xl bg-blue-600 items-center justify-center flex-row gap-2"
-                >
-                  <Check size={18} color="#fff" />
-                  <Text className="text-white font-bold">Use Photo</Text>
-                </TouchableOpacity>
+                <Text className={`text-center font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Tap to capture a selfie
+                </Text>
+                <Text className={`text-center text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Please ensure your face is clearly visible
+                </Text>
               </View>
-            </View>
-          )}
+            ) : (
+              <View className="items-center">
+                <View className="w-48 h-48 rounded-full overflow-hidden mb-6 border-4 border-slate-200 dark:border-slate-700">
+                  <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%' }} />
+                </View>
+
+                <View className="flex-row gap-4 w-full">
+                  <TouchableOpacity
+                    onPress={handleRetake}
+                    className="flex-1 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 items-center justify-center flex-row gap-2"
+                  >
+                    <RefreshCcw size={18} color={isDark ? '#cbd5e1' : '#475569'} />
+                    <Text className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      Retake
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleSubmit}
+                    className="flex-1 py-3.5 rounded-2xl bg-blue-600 items-center justify-center flex-row gap-2"
+                  >
+                    <Check size={18} color="#fff" />
+                    <Text className="text-white font-bold">Use Photo</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      {/* Camera Prominent Disclosure Modal */}
+      <ProminentDisclosureModal
+        visible={showCameraDisclosure}
+        type="camera"
+        onAccept={handleDisclosureAccept}
+        onDecline={() => setShowCameraDisclosure(false)}
+        isDark={isDark}
+      />
+    </>
   );
 }

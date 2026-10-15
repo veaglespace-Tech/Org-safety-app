@@ -40,6 +40,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '@/components/layout/Footer';
 import { useGeoLocationTracker } from '@/hooks/useGeoLocationTracker';
 import { LiveLocationMap } from '@/components/ui/LiveLocationMap';
+import { ProminentDisclosureModal } from '@/components/ui/ProminentDisclosureModal';
 
 export function SOSModule() {
   const { user } = useSelector((state: any) => state.auth);
@@ -81,7 +82,8 @@ export function SOSModule() {
     setLocLoading(true);
     setLocationErrorMsg(null);
     try {
-      const hasPermission = await requestPermissions();
+      // For initial coordinates display on dashboard mount, only request foreground location
+      const hasPermission = await requestPermissions({ requestBackground: false });
       if (!hasPermission) {
         setLocationErrorMsg('Location permission denied');
         setLocLoading(false);
@@ -741,47 +743,15 @@ ${locUrl || 'Location coordinates not available'}
         </View>
       </View>
 
-      {/* 6. Prominent Disclosure Custom UI Modal */}
+      {/* 6. Prominent Disclosure Modal (Google Play Compliant) */}
       {disclosureConfig && disclosureConfig.visible && (
-        <Modal
-          transparent
-          animationType="fade"
+        <ProminentDisclosureModal
           visible={disclosureConfig.visible}
-          onRequestClose={disclosureConfig.onDecline}
-        >
-          <View className="flex-1 bg-slate-900/80 justify-center items-center px-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.85)' }}>
-            <View className="bg-white dark:bg-slate-900 w-full rounded-[2rem] p-6 shadow-2xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
-              <View className="bg-orange-100 dark:bg-orange-500/20 w-16 h-16 rounded-full items-center justify-center mb-5 self-center">
-                <MapPin size={32} color="#f97316" />
-              </View>
-              
-              <Text className="text-xl font-black text-slate-900 dark:text-white text-center mb-3">
-                Background Location Required
-              </Text>
-              
-              <Text className="text-slate-600 dark:text-slate-300 text-sm text-center leading-relaxed mb-8">
-                <Text className="font-bold text-slate-800 dark:text-slate-100">तिची सुरक्षा</Text> collects location data to enable live tracking with your emergency contacts during an active SOS, even when the app is closed or not in use.
-              </Text>
-              
-              <View className="flex-row gap-3">
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={disclosureConfig.onDecline}
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 py-3.5 rounded-2xl items-center justify-center border border-slate-200 dark:border-slate-700"
-                >
-                  <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm tracking-wide">Decline</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={disclosureConfig.onAccept}
-                  className="flex-1 bg-orange-500 py-3.5 rounded-2xl items-center justify-center shadow-md shadow-orange-500/30"
-                >
-                  <Text className="text-white font-black text-sm tracking-wide">Accept</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+          type={disclosureConfig.type}
+          onAccept={disclosureConfig.onAccept}
+          onDecline={disclosureConfig.onDecline}
+          isDark={isDark}
+        />
       )}
 
     </View>

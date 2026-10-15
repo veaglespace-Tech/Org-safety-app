@@ -2,7 +2,7 @@
   "expo": {
     "name": "तिची सुरक्षा",
     "slug": "mobile-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/tich-surksha-woman.png",
     "scheme": "tichisuraksha",
@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 8,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"
