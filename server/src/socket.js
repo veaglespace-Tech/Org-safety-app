@@ -131,7 +131,33 @@ const initializeSocket = (server) => {
     });
   });
 
+  initializeSocket.io = io;
   return io;
 };
 
+const emitBackgroundLocation = (data) => {
+  const { token, latitude, longitude, accuracy, speed, heading, timestamp } = data;
+  if (!token || latitude == null || longitude == null) return false;
+
+  const locationData = {
+    latitude,
+    longitude,
+    accuracy,
+    speed: speed ?? null,
+    heading: heading ?? null,
+    timestamp: timestamp || Date.now(),
+    lastUpdated: Date.now(),
+  };
+
+  locationCache[token] = locationData;
+
+  if (initializeSocket.io) {
+    initializeSocket.io.to(`track:${token}`).emit('location-updated', locationData);
+    return true;
+  }
+  return false;
+};
+
 module.exports = initializeSocket;
+module.exports.emitBackgroundLocation = emitBackgroundLocation;
+

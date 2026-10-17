@@ -1,4 +1,5 @@
 const sosService = require('../services/sos.service');
+const { emitBackgroundLocation } = require('../socket');
 
 exports.triggerSOS = async (req, res) => {
   try {
@@ -49,3 +50,28 @@ exports.stopSOS = async (req, res) => {
     }
   }
 };
+
+exports.updateBackgroundLocation = async (req, res) => {
+  try {
+    const { token, latitude, longitude, accuracy, speed, heading, timestamp } = req.body;
+    if (!token || latitude == null || longitude == null) {
+      return res.status(400).json({ error: "Missing required location data" });
+    }
+
+    emitBackgroundLocation({
+      token,
+      latitude,
+      longitude,
+      accuracy,
+      speed,
+      heading,
+      timestamp,
+    });
+
+    return res.status(200).json({ success: true, message: "Location updated" });
+  } catch (error) {
+    console.error("SOS Background Location Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
