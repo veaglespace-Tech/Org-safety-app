@@ -339,6 +339,10 @@ ${locUrl || 'Location coordinates not available'}
     Linking.openURL(`tel:112`);
   };
 
+  const handleCallHelpline = () => {
+    Linking.openURL(`tel:+919225241608`);
+  };
+
   const handleWhatsApp = () => {
     const locUrl = location
       ? `https://maps.google.com/?q=${location.lat},${location.lng}`
@@ -580,19 +584,34 @@ ${locUrl || 'Location coordinates not available'}
               <View className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
             </View>
 
-            <View className="flex-row gap-2">
+            <View className="flex-row gap-1.5 sm:gap-2">
               {/* Call Emergency Services */}
               <TouchableOpacity
                 onPress={handleCallEmergency}
                 activeOpacity={0.8}
                 className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-rose-500/40 bg-rose-500/10 active:bg-rose-500/20"
               >
-                <Phone size={20} color="#f43f5e" />
-                <Text className="text-rose-600 dark:text-rose-400 font-black text-xs mt-1.5 text-center">
+                <Phone size={18} color="#f43f5e" />
+                <Text className="text-rose-600 dark:text-rose-400 font-black text-[11px] sm:text-xs mt-1 text-center">
                   CALL 112
                 </Text>
-                <Text className="text-rose-500/80 text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
+                <Text className="text-rose-500/80 text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
                   EMERGENCY
+                </Text>
+              </TouchableOpacity>
+
+              {/* Call Support Helpline */}
+              <TouchableOpacity
+                onPress={handleCallHelpline}
+                activeOpacity={0.8}
+                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-blue-500/40 bg-blue-500/10 active:bg-blue-500/20"
+              >
+                <Phone size={18} color="#3b82f6" />
+                <Text className="text-blue-600 dark:text-blue-400 font-black text-[11px] sm:text-xs mt-1 text-center">
+                  HELPLINE
+                </Text>
+                <Text className="text-blue-500/80 text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
+                  92252 41608
                 </Text>
               </TouchableOpacity>
 
@@ -602,12 +621,12 @@ ${locUrl || 'Location coordinates not available'}
                 activeOpacity={0.8}
                 className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 active:bg-emerald-500/20"
               >
-                <MessageCircle size={20} color="#10b981" />
-                <Text className="text-emerald-600 dark:text-emerald-400 font-black text-xs mt-1.5 text-center">
+                <MessageCircle size={18} color="#10b981" />
+                <Text className="text-emerald-600 dark:text-emerald-400 font-black text-[11px] sm:text-xs mt-1 text-center">
                   WHATSAPP
                 </Text>
-                <Text className="text-emerald-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
-                  SEND LOCATION
+                <Text className="text-emerald-500/80 text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
+                  LOCATION
                 </Text>
               </TouchableOpacity>
 
@@ -617,11 +636,11 @@ ${locUrl || 'Location coordinates not available'}
                 activeOpacity={0.8}
                 className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 active:bg-indigo-500/20"
               >
-                <Mail size={20} color="#6366f1" />
-                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-xs mt-1.5 text-center">
+                <Mail size={18} color="#6366f1" />
+                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-[11px] sm:text-xs mt-1 text-center">
                   EMAIL
                 </Text>
-                <Text className="text-indigo-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                <Text className="text-indigo-500/80 text-[7px] sm:text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
                   ALERT ADMIN
                 </Text>
               </TouchableOpacity>

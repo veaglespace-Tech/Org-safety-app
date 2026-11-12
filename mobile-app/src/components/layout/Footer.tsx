@@ -34,6 +34,18 @@ export function AppFooter() {
         </Text>
       </TouchableOpacity>
 
+      {/* Support & Helpline Banner */}
+      <TouchableOpacity
+        onPress={() => Linking.openURL('tel:+919225241608')}
+        activeOpacity={0.7}
+        className="w-full flex-row items-center justify-center px-4 py-2 mb-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
+      >
+        <Text className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 tracking-wide text-center">
+          📞 Support & Helpline:{' '}
+          <Text className="font-black underline">+91 92252 41608</Text>
+        </Text>
+      </TouchableOpacity>
+
       {/* Copyright & Dev Credit */}
       <View className="pt-1.5 items-center justify-center border-t border-slate-200/50 dark:border-slate-800/80">
         <TouchableOpacity

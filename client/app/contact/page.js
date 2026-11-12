@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Send, Mail, User, MessageSquare } from "lucide-react";
+import { ChevronLeft, Send, Mail, User, MessageSquare, Phone, MessageCircle, Clock, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 import { useForm } from "react-hook-form";
 import { API_BASE_URL } from "@/services/api/baseApi";
@@ -54,11 +54,56 @@ export default function ContactPage() {
         <div className="rounded-3xl bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-slate-900 md:p-12">
           <div className="mb-8 text-center">
             <h1 className="mb-4 text-3xl font-black text-slate-900 dark:text-white md:text-4xl">
-              Contact Us
+              Contact Us & Support
             </h1>
-            <p className="text-slate-500 dark:text-slate-400">
-              Have questions or need assistance? Fill out the form below and we'll get back to you.
+            <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto text-sm sm:text-base">
+              Need immediate help or have questions? Call our direct helpline or fill out the form below.
             </p>
+          </div>
+
+          {/* Dedicated Support & Helpline Banner Cards */}
+          <div className="grid gap-4 sm:grid-cols-2 mb-8">
+            <a
+              href="tel:+919225241608"
+              className="flex items-center gap-4 p-4 rounded-2xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition-all group"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/30 group-hover:scale-105 transition-transform">
+                <Phone size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Support & Helpline
+                </div>
+                <div className="font-mono text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
+                  +91 92252 41608
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                  <Clock size={12} /> 24/7 Available for Assistance
+                </div>
+              </div>
+            </a>
+
+            <a
+              href="https://wa.me/919225241608"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition-all group"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                <MessageCircle size={22} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  WhatsApp Support
+                </div>
+                <div className="font-mono text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
+                  +91 92252 41608
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                  <Shield size={12} /> Instant Chat & Location Share
+                </div>
+              </div>
+            </a>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
