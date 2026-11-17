@@ -111,15 +111,23 @@ export default function AboutPage() {
 
           <div className="mt-12 rounded-2xl bg-blue-50 p-6 text-center dark:bg-blue-500/10 md:p-8">
             <h3 className="mb-2 text-xl font-black text-slate-900 dark:text-white">Need More Help?</h3>
-            <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
-              If you have any questions or run into technical issues while using the platform, our support team is ready to assist you.
+            <p className="mb-5 text-sm text-slate-600 dark:text-slate-400">
+              If you have any questions or run into technical issues while using the platform, our support team is ready to assist you 24/7.
             </p>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-0.5 hover:bg-blue-700"
-            >
-              Contact Support
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="tel:+919225241608"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition-transform hover:-translate-y-0.5 hover:bg-emerald-700"
+              >
+                <span>📞 Helpline: +91 92252 41608</span>
+              </a>
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-transform hover:-translate-y-0.5 hover:bg-blue-700"
+              >
+                Contact Support Form
+              </Link>
+            </div>
           </div>
         </div>
       </div>

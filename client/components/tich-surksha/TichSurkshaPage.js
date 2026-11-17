@@ -379,32 +379,41 @@ export default function TichSurkshaPage() {
               <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               
               {/* Call 112 */}
               <a href="tel:112" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-rose-500/50 hover:bg-rose-500/10 transition-colors group">
-                <Phone size={28} className="text-rose-500 group-hover:scale-110 transition-transform" />
+                <Phone size={26} className="text-rose-500 group-hover:scale-110 transition-transform" />
                 <div className="text-center">
                   <div className="text-rose-400 font-bold text-sm">CALL 112</div>
                   <div className="text-rose-500/60 text-[10px] uppercase font-bold tracking-wider">Emergency</div>
                 </div>
               </a>
 
+              {/* Call Support Helpline */}
+              <a href="tel:+919225241608" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-blue-500/50 hover:bg-blue-500/10 transition-colors group">
+                <Phone size={26} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                <div className="text-center">
+                  <div className="text-blue-400 font-bold text-sm">HELPLINE</div>
+                  <div className="text-blue-500/60 text-[10px] uppercase font-bold tracking-wider">92252 41608</div>
+                </div>
+              </a>
+
               {/* WhatsApp */}
-              <a href="https://wa.me/" target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-emerald-500/50 hover:bg-emerald-500/10 transition-colors group">
-                <MessageCircle size={28} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+              <a href="https://wa.me/919225241608" target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-emerald-500/50 hover:bg-emerald-500/10 transition-colors group">
+                <MessageCircle size={26} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                 <div className="text-center">
                   <div className="text-emerald-400 font-bold text-sm">WHATSAPP</div>
-                  <div className="text-emerald-500/60 text-[10px] uppercase font-bold tracking-wider">Location</div>
+                  <div className="text-emerald-500/60 text-[10px] uppercase font-bold tracking-wider">92252 41608</div>
                 </div>
               </a>
 
               {/* Email */}
-              <a href="mailto:admin@organization.com" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-blue-500/50 hover:bg-blue-500/10 transition-colors group">
-                <Mail size={28} className="text-blue-500 group-hover:scale-110 transition-transform" />
+              <a href="mailto:admin@organization.com" className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-purple-500/50 hover:bg-purple-500/10 transition-colors group">
+                <Mail size={26} className="text-purple-500 group-hover:scale-110 transition-transform" />
                 <div className="text-center">
-                  <div className="text-blue-400 font-bold text-sm">EMAIL</div>
-                  <div className="text-blue-500/60 text-[10px] uppercase font-bold tracking-wider">Alert Admin</div>
+                  <div className="text-purple-400 font-bold text-sm">EMAIL</div>
+                  <div className="text-purple-500/60 text-[10px] uppercase font-bold tracking-wider">Alert Admin</div>
                 </div>
               </a>
 

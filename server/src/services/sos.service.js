@@ -54,8 +54,9 @@ class SOSService {
     });
     
     const adminPhones = admins.map(a => a.phone).filter(Boolean);
-    if (process.env.ADMIN_PHONE && !adminPhones.includes(process.env.ADMIN_PHONE)) {
-      adminPhones.push(process.env.ADMIN_PHONE);
+    const helplineSupportPhone = process.env.ADMIN_PHONE || '+919225241608';
+    if (!adminPhones.includes(helplineSupportPhone)) {
+      adminPhones.push(helplineSupportPhone);
     }
     
     const dispatchPhones = [...adminPhones];

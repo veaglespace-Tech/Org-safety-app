@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from 'expo-router/drawer';
 import { useSelector, useDispatch } from 'react-redux';
@@ -12,6 +12,7 @@ import {
   LogOut,
   Settings,
   MailWarning,
+  Phone,
 } from 'lucide-react-native';
 import { logout } from '@/store/slices/authSlice';
 import { ROLES, formatRoleLabel } from '@/utils/roles';
@@ -220,6 +221,57 @@ function CustomDrawerContent(props: any) {
           );
         })}
       </ScrollView>
+
+      {/* Helpline & Support Contact */}
+      <View
+        className={`px-4 pt-2 pb-1 border-t ${
+          isDark ? 'border-slate-800/80' : 'border-slate-100'
+        }`}
+      >
+        <TouchableOpacity
+          onPress={() => Linking.openURL('tel:+919225241608')}
+          activeOpacity={0.7}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              marginHorizontal: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 16,
+              borderWidth: 1,
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : '#ecfdf5',
+              borderColor: isDark ? 'rgba(16, 185, 129, 0.25)' : '#a7f3d0',
+            }}
+          >
+            <Phone color="#10b981" size={18} />
+            <View>
+              <Text
+                style={{
+                  color: isDark ? '#34d399' : '#059669',
+                  fontWeight: '800',
+                  fontSize: 11,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                }}
+              >
+                Helpline & Support
+              </Text>
+              <Text
+                style={{
+                  color: isDark ? '#f1f5f9' : '#0f172a',
+                  fontWeight: '900',
+                  fontSize: 13,
+                }}
+              >
+                +91 92252 41608
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </View>
 
       {/* Logout */}
       <View

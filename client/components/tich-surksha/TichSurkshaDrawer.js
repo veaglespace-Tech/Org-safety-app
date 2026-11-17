@@ -66,9 +66,20 @@ export default function TichSurkshaDrawer({ isOpen, onClose }) {
             </button>
 
             {/* Helpline Numbers */}
-            <div className="surface-card rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 space-y-4 shadow-sm">
+            <div className="surface-card rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-5 space-y-3 shadow-sm">
               <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Helpline Numbers</h4>
               
+              <a href="tel:+919225241608" className="flex items-center gap-4 p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-500/20 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition-colors group">
+                <div className="bg-emerald-100 dark:bg-emerald-900/50 p-3 rounded-lg text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
+                  <Phone size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-slate-900 dark:text-white">Support & Helpline</p>
+                  <p className="text-xs text-slate-500 font-medium">24/7 Helpline & Assistance</p>
+                </div>
+                <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm sm:text-base font-mono">+91 92252 41608</span>
+              </a>
+
               <a href="tel:1091" className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group">
                 <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                   <Phone size={20} />
