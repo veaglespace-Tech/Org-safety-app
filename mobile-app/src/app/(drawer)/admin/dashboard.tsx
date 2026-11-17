@@ -44,6 +44,7 @@ import { ActionModal } from '@/components/ui/ActionModal';
 import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '@/components/layout/Footer';
 import { SOSModule } from '@/components/ui/SOSModule';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -211,6 +212,7 @@ export default function AdminDashboard() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
         showsVerticalScrollIndicator={false}
       >
+        <ResponsiveContainer maxWidth={760}>
         {/* 1. Organization Banner */}
         <View className="px-4 pt-5">
           <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm dark:shadow-xl">
@@ -231,7 +233,7 @@ export default function AdminDashboard() {
                   {orgName}
                 </Text>
                 <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1 leading-relaxed">
-                  Check out your organization's updates, view your team members, and manage your attendance securely.
+                  Check out your organization&apos;s updates, view your team members, and manage your attendance securely.
                 </Text>
               </View>
             </View>
@@ -379,6 +381,7 @@ export default function AdminDashboard() {
         <View className="px-4 mt-auto">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
 
         {/* Member Details & Edit Action Sheet Modal */}
         {selectedMember && (

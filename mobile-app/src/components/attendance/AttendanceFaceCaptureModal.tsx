@@ -82,9 +82,9 @@ export default function AttendanceFaceCaptureModal({ visible, onClose, onCapture
 
   return (
     <>
-      <Modal visible={visible} animationType="slide" transparent>
-        <View className="flex-1 bg-black/60 justify-center items-center px-4">
-          <View className={`w-full max-w-sm rounded-3xl p-6 ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+      <Modal visible={visible} animationType="fade" transparent>
+        <View className="flex-1 bg-black/60 justify-center items-center px-4 py-6">
+          <View className={`w-full max-w-md sm:max-w-lg rounded-3xl p-6 sm:p-8 ${isDark ? 'bg-slate-900' : 'bg-white'} border border-slate-200 dark:border-slate-800 shadow-2xl`}>
             <View className="flex-row justify-between items-center mb-6">
               <Text className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Selfie Verification

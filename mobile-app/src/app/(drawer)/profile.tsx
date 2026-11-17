@@ -27,9 +27,10 @@ import {
   Trash2,
 } from 'lucide-react-native';
 
+import { useRouter } from 'expo-router';
 import { authApi } from '@/services/api/authApi';
 import { orgApi } from '@/services/api/orgApi';
-import { setCurrentUser } from '@/store/slices/authSlice';
+import { setCurrentUser, logout } from '@/store/slices/authSlice';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { TextInput } from '@/components/ui/TextInput';
 import { CountryPhoneField } from '@/components/ui/CountryPhoneField';
@@ -40,6 +41,7 @@ import { ROLES } from '@/utils/roles';
 import { useAppTheme } from '@/context/ThemeContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ProminentDisclosureModal } from '@/components/ui/ProminentDisclosureModal';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GENDERS = [
@@ -49,6 +51,7 @@ const GENDERS = [
 ];
 
 export default function ProfileSettingsPage() {
+  const router = useRouter();
   const dispatch = useDispatch();
   const { user } = useSelector((state: any) => state.auth);
   const { isDark } = useAppTheme();
@@ -58,6 +61,7 @@ export default function ProfileSettingsPage() {
   });
   
   const [updateMe, { isLoading: isUpdatingProfile }] = authApi.useUpdateMeMutation();
+  const [deleteMe, { isLoading: isDeletingAccount }] = authApi.useDeleteMeMutation();
   const [updateOrgDetails, { isLoading: isUpdatingOrg }] = orgApi.useUpdateOrgDetailsMutation();
 
   const currentUser = meData?.user || user;
@@ -102,6 +106,7 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: currentUser.name || '',
         email: currentUser.email || '',
@@ -293,56 +298,107 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  const proceedAccountDeletion = async () => {
+    try {
+      console.log('Initiating account deletion via DELETE /api/auth/me...');
+      const res = await deleteMe(undefined).unwrap();
+      console.log('Account deleted response:', res);
+      dispatch(logout());
+      if (Platform.OS === 'web') {
+        window.alert('Your account has been deleted successfully.');
+      } else {
+        Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+      }
+      router.replace('/');
+    } catch (err: any) {
+      console.error('Failed to delete account:', err);
+      const errMsg = err?.data?.error || err?.data?.message || err?.message || 'Failed to delete account. Please try again.';
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${errMsg}`);
+      } else {
+        Alert.alert('Error', errMsg);
+      }
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        'Are you sure you want to delete your account? This action is permanent and cannot be undone. All your personal data and records will be permanently removed.'
+      );
+      if (confirmed) {
+        proceedAccountDeletion();
+      }
+      return;
+    }
+
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action is permanent and cannot be undone. All your personal data, attendance logs, and emergency contact associations will be permanently removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: proceedAccountDeletion,
+        },
+      ]
+    );
+  };
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="flex-1 bg-slate-50 dark:bg-slate-950">
+      <View className="flex-1 bg-slate-50 dark:bg-slate-950 items-center">
         {/* Tabs Header */}
       {isAdmin && (
-        <View className="flex-row px-5 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <TouchableOpacity
-            onPress={() => setActiveTab('profile')}
-            className={`flex-1 items-center pb-3 border-b-2 ${
-              activeTab === 'profile'
-                ? 'border-blue-600 dark:border-blue-500'
-                : 'border-transparent'
-            }`}
-          >
-            <Text
-              className={`font-extrabold text-sm ${
+        <View className="w-full flex-row px-5 pt-4 pb-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 justify-center">
+          <View className="w-full max-w-2xl flex-row">
+            <TouchableOpacity
+              onPress={() => setActiveTab('profile')}
+              className={`flex-1 items-center pb-3 border-b-2 ${
                 activeTab === 'profile'
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-slate-500 dark:text-slate-400'
+                  ? 'border-blue-600 dark:border-blue-500'
+                  : 'border-transparent'
               }`}
             >
-              Personal Settings
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setActiveTab('org')}
-            className={`flex-1 items-center pb-3 border-b-2 ${
-              activeTab === 'org'
-                ? 'border-blue-600 dark:border-blue-500'
-                : 'border-transparent'
-            }`}
-          >
-            <Text
-              className={`font-extrabold text-sm ${
+              <Text
+                className={`font-extrabold text-sm ${
+                  activeTab === 'profile'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                Personal Settings
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab('org')}
+              className={`flex-1 items-center pb-3 border-b-2 ${
                 activeTab === 'org'
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-slate-500 dark:text-slate-400'
+                  ? 'border-blue-600 dark:border-blue-500'
+                  : 'border-transparent'
               }`}
             >
-              Organization Data
-            </Text>
-          </TouchableOpacity>
+              <Text
+                className={`font-extrabold text-sm ${
+                  activeTab === 'org'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                Organization Data
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
       <ScrollView
-        className="flex-1 px-5 pt-4"
+        className="flex-1 w-full px-5 pt-4"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
         showsVerticalScrollIndicator={false}
       >
+        <ResponsiveContainer maxWidth={680}>
         {/* Appearance Card */}
         <SurfaceCard className="p-5 mb-4">
           <View className="flex-row items-center justify-between gap-2">
@@ -493,6 +549,30 @@ export default function ProfileSettingsPage() {
                 <Text className="text-white font-extrabold text-sm">Save Profile Changes</Text>
               </View>
             </Button>
+
+            {/* Danger Zone: Delete Account */}
+            <View className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+              <View className="mb-3">
+                <Text className="text-sm font-black text-rose-600 dark:text-rose-400">
+                  Danger Zone
+                </Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 leading-relaxed">
+                  Permanently delete your account and all associated safety and profile data. This action is irreversible.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleDeleteAccount}
+                disabled={isDeletingAccount}
+                activeOpacity={0.8}
+                className="w-full flex-row items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 py-3.5 px-4 rounded-2xl active:bg-rose-100 dark:active:bg-rose-900/50"
+              >
+                <Trash2 size={18} color="#ef4444" />
+                <Text className="text-rose-600 dark:text-rose-400 font-extrabold text-sm">
+                  {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </SurfaceCard>
         ) : (
           <SurfaceCard className="p-5">
@@ -565,11 +645,36 @@ export default function ProfileSettingsPage() {
                 <Text className="text-white font-extrabold text-sm">Save Organization Data</Text>
               </View>
             </Button>
+
+            {/* Danger Zone: Delete Account */}
+            <View className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+              <View className="mb-3">
+                <Text className="text-sm font-black text-rose-600 dark:text-rose-400">
+                  Danger Zone
+                </Text>
+                <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1 leading-relaxed">
+                  Permanently delete your account and all associated safety and profile data. This action is irreversible.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleDeleteAccount}
+                disabled={isDeletingAccount}
+                activeOpacity={0.8}
+                className="w-full flex-row items-center justify-center gap-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 py-3.5 px-4 rounded-2xl active:bg-rose-100 dark:active:bg-rose-900/50"
+              >
+                <Trash2 size={18} color="#ef4444" />
+                <Text className="text-rose-600 dark:text-rose-400 font-extrabold text-sm">
+                  {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </SurfaceCard>
         )}
         <View className="mt-auto pt-6">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
       </ScrollView>
 
       {/* Blood Group Modal */}

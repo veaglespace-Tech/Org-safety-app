@@ -380,10 +380,10 @@ ${locUrl || 'Location coordinates not available'}
     >
       {/* 1. Top 3 Header Cards Row */}
       <View className="px-3.5 sm:px-4 pt-4">
-        <View className="flex-row gap-2.5 items-stretch">
+        <View className="flex-row gap-2.5 sm:gap-4 items-stretch justify-center">
           {/* Card 1: Left - Full Covered Org Image */}
           <View
-            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] max-h-[160px] p-2 items-center justify-center"
+            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] sm:min-h-[180px] max-h-[220px] p-2 sm:p-3 items-center justify-center"
             style={{ backgroundColor: '#ffffff' }}
           >
             {orgLogo ? (
@@ -401,26 +401,26 @@ ${locUrl || 'Location coordinates not available'}
 
           {/* Card 2: Center Tichi Suraksha Card */}
           <View
-            className="flex-[1.25] rounded-3xl p-3 items-center justify-center shadow-xl min-h-[145px] max-h-[160px] relative overflow-hidden"
+            className="flex-[1.25] rounded-3xl p-3 sm:p-4 items-center justify-center shadow-xl min-h-[145px] sm:min-h-[180px] max-h-[220px] relative overflow-hidden"
             style={{ backgroundColor: '#f97316' }}
           >
-            <View className="bg-orange-100 rounded-full w-12 h-12 mb-1.5 items-center justify-center overflow-hidden border-2 border-white/95 shadow-sm">
+            <View className="bg-orange-100 rounded-full w-12 h-12 sm:w-16 sm:h-16 mb-1.5 items-center justify-center overflow-hidden border-2 border-white/95 shadow-sm">
               <Image
                 source={require('@/assets/images/tich-surksha-woman.jpg')}
-                style={{ width: 48, height: 48 }}
+                style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
               />
             </View>
             <Text
-              className="text-xs font-black text-slate-950 tracking-wide text-center"
+              className="text-xs sm:text-sm font-black text-slate-950 tracking-wide text-center"
               numberOfLines={2}
               adjustsFontSizeToFit
               minimumFontScale={0.7}
             >
               {`"तिची सुरक्षा"`}
             </Text>
-            <View className="bg-white/45 px-2 py-0.5 rounded-full mt-1 border border-white/60">
-              <Text className="text-[8px] font-black text-slate-950 text-center">
+            <View className="bg-white/45 px-2.5 py-0.5 rounded-full mt-1 border border-white/60">
+              <Text className="text-[8px] sm:text-[10px] font-black text-slate-950 text-center">
                 आपली जबाबदारी
               </Text>
             </View>
@@ -428,7 +428,7 @@ ${locUrl || 'Location coordinates not available'}
 
           {/* Card 3: Right - Full Covered 112 Police Shield */}
           <View
-            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] max-h-[160px] p-2 items-center justify-center"
+            className="flex-1 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md min-h-[145px] sm:min-h-[180px] max-h-[220px] p-2 sm:p-3 items-center justify-center"
             style={{ backgroundColor: '#ffffff' }}
           >
             <Image
@@ -580,18 +580,18 @@ ${locUrl || 'Location coordinates not available'}
               <View className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
             </View>
 
-            <View className="flex-row gap-2">
+            <View className="flex-row gap-2 sm:gap-4">
               {/* Call Emergency Services */}
               <TouchableOpacity
                 onPress={handleCallEmergency}
                 activeOpacity={0.8}
-                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-rose-500/40 bg-rose-500/10 active:bg-rose-500/20"
+                className="flex-1 items-center justify-center py-3.5 sm:py-5 px-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 active:bg-rose-500/20"
               >
-                <Phone size={20} color="#f43f5e" />
-                <Text className="text-rose-600 dark:text-rose-400 font-black text-xs mt-1.5 text-center">
+                <Phone size={22} color="#f43f5e" />
+                <Text className="text-rose-600 dark:text-rose-400 font-black text-xs sm:text-sm mt-1.5 text-center">
                   CALL 112
                 </Text>
-                <Text className="text-rose-500/80 text-[8px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
+                <Text className="text-rose-500/80 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-center" numberOfLines={1}>
                   EMERGENCY
                 </Text>
               </TouchableOpacity>
@@ -600,13 +600,13 @@ ${locUrl || 'Location coordinates not available'}
               <TouchableOpacity
                 onPress={handleWhatsApp}
                 activeOpacity={0.8}
-                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 active:bg-emerald-500/20"
+                className="flex-1 items-center justify-center py-3.5 sm:py-5 px-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 active:bg-emerald-500/20"
               >
-                <MessageCircle size={20} color="#10b981" />
-                <Text className="text-emerald-600 dark:text-emerald-400 font-black text-xs mt-1.5 text-center">
+                <MessageCircle size={22} color="#10b981" />
+                <Text className="text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm mt-1.5 text-center">
                   WHATSAPP
                 </Text>
-                <Text className="text-emerald-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                <Text className="text-emerald-500/80 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-center">
                   SEND LOCATION
                 </Text>
               </TouchableOpacity>
@@ -615,13 +615,13 @@ ${locUrl || 'Location coordinates not available'}
               <TouchableOpacity
                 onPress={handleEmailAdmin}
                 activeOpacity={0.8}
-                className="flex-1 items-center justify-center py-3 px-1 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 active:bg-indigo-500/20"
+                className="flex-1 items-center justify-center py-3.5 sm:py-5 px-2 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 active:bg-indigo-500/20"
               >
-                <Mail size={20} color="#6366f1" />
-                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-xs mt-1.5 text-center">
+                <Mail size={22} color="#6366f1" />
+                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-xs sm:text-sm mt-1.5 text-center">
                   EMAIL
                 </Text>
-                <Text className="text-indigo-500/80 text-[8px] font-bold uppercase tracking-wider text-center">
+                <Text className="text-indigo-500/80 text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-center">
                   ALERT ADMIN
                 </Text>
               </TouchableOpacity>

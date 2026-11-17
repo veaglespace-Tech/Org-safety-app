@@ -29,6 +29,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { BadgePill } from '@/components/ui/BadgePill';
 import { AppFooter } from '@/components/layout/Footer';
 import { SOSModule } from '@/components/ui/SOSModule';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 
 export default function MemberDashboard() {
   const router = useRouter();
@@ -71,7 +72,8 @@ export default function MemberDashboard() {
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1. Member Profile & Organization Banner */}
+      <ResponsiveContainer maxWidth={760}>
+        {/* 1. Member Profile & Organization Banner */}
       <View className="px-4 pt-5">
         <View className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm dark:shadow-xl">
           <View className="flex-row items-center gap-4">
@@ -169,6 +171,7 @@ export default function MemberDashboard() {
       <View className="px-4 mt-auto">
         <AppFooter />
       </View>
+      </ResponsiveContainer>
     </ScrollView>
   );
 }

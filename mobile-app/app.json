@@ -2,24 +2,24 @@
   "expo": {
     "name": "तिची सुरक्षा",
     "slug": "mobile-app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/tich-surksha-woman.png",
     "scheme": "tichisuraksha",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.veaglespace.tichiSurakshaApp",
-      "buildNumber": "10",
+      "buildNumber": "12",
       "icon": "./assets/images/tich-surksha-woman.png",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "तिची सुरक्षा requires camera access to allow you to take and upload a profile picture.",
-        "NSPhotoLibraryUsageDescription": "तिची सुरक्षा requires access to your photo library so you can choose and upload a profile picture.",
-        "NSPhotoLibraryAddUsageDescription": "तिची सुरक्षा requires permission to save photos to your device.",
-        "NSLocationWhenInUseUsageDescription": "तिची सुरक्षा requires location access to share your location with emergency contacts when you trigger an SOS.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "तिची सुरक्षा requires background location access to continue tracking your location even when the app is minimized during an active SOS.",
-        "NSMicrophoneUsageDescription": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert.",
+        "NSCameraUsageDescription": "तिची सुरक्षा requires camera access to capture your selfie for verified attendance check-in and updating your profile picture.",
+        "NSPhotoLibraryUsageDescription": "तिची सुरक्षा requires access to your photo library to select a profile picture or upload your organization logo.",
+        "NSPhotoLibraryAddUsageDescription": "तिची सुरक्षा requires permission to save photos to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "तिची सुरक्षा requires your location to display your safety coordinates and share them with emergency contacts during an active SOS.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "तिची सुरक्षा requires background location access to keep tracking and transmitting your live location to emergency responders even if the screen turns off during an active SOS.",
+        "NSLocationAlwaysUsageDescription": "तिची सुरक्षा requires background location access to keep tracking and transmitting your live location to emergency responders even if the screen turns off during an active SOS.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "location",
@@ -34,7 +34,7 @@
     },
     "android": {
       "package": "com.veaglespace.tichiSurakshaApp",
-      "versionCode": 11,
+      "versionCode": 12,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/tich-surksha-woman.png",
         "backgroundColor": "#FFFFFF"
@@ -78,8 +78,7 @@
         "expo-image-picker",
         {
           "photosPermission": "तिची सुरक्षा requires access to your photo library so you can choose and upload a profile picture.",
-          "cameraPermission": "तिची सुरक्षा requires camera access to allow you to take and upload a profile picture.",
-          "microphonePermission": "तिची सुरक्षा requires microphone access to record ambient audio when you trigger an SOS alert."
+          "cameraPermission": "तिची सुरक्षा requires camera access to allow you to capture a selfie for attendance check-in and profile verification."
         }
       ],
       "expo-web-browser",

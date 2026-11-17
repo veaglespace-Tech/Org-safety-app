@@ -24,6 +24,7 @@ import {
 import { useAppTheme } from '@/context/ThemeContext';
 import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { AppFooter } from '@/components/layout/Footer';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 
 export default function EmergencyEmailsScreen() {
   const { isDark } = useAppTheme();
@@ -97,6 +98,7 @@ export default function EmergencyEmailsScreen() {
       contentContainerStyle={{ flexGrow: 1, padding: 16, paddingBottom: 10 }}
       keyboardShouldPersistTaps="handled"
     >
+      <ResponsiveContainer maxWidth={680}>
       <SurfaceCard className="p-5 mb-6">
         <View className="flex-row items-start sm:items-center justify-between mb-4 gap-2">
           <View className="flex-row items-center gap-3 flex-1">
@@ -161,7 +163,7 @@ export default function EmergencyEmailsScreen() {
             <AlertCircle color={isDark ? '#475569' : '#94a3b8'} size={48} className="mb-3" />
             <Text className="text-lg font-bold text-slate-900 dark:text-white">No Emergency Emails</Text>
             <Text className="text-sm text-slate-500 dark:text-slate-400 mt-1 text-center">
-              You haven't added any emergency emails yet.
+              You haven&apos;t added any emergency emails yet.
             </Text>
           </View>
         ) : (
@@ -205,6 +207,7 @@ export default function EmergencyEmailsScreen() {
         <View className="px-4 mt-auto">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
       </ScrollView>
     </KeyboardAvoidingView>
   );

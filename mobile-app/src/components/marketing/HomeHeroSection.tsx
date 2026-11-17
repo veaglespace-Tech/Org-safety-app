@@ -30,6 +30,7 @@ import { resolveDashboardPath } from '@/utils/roles';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAppTheme } from '@/context/ThemeContext';
 import { AppFooter } from '../layout/Footer';
+import { ResponsiveContainer } from '../layout/ResponsiveContainer';
 
 export function HomeHeroSection() {
   const router = useRouter();
@@ -69,6 +70,7 @@ export function HomeHeroSection() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        <ResponsiveContainer maxWidth={840}>
         {/* 1. Header Navigation Bar */}
         <View className="px-4 sm:px-6 pb-4 pt-2 flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800/80">
           <View className="flex-row items-center gap-2.5 flex-1 mr-2">
@@ -420,6 +422,7 @@ export function HomeHeroSection() {
         <View className="mt-8 px-4">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
       </ScrollView>
     </View>
   );

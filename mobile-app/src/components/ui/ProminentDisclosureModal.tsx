@@ -50,7 +50,7 @@ export function ProminentDisclosureModal({
           description: (
             <>
               <Text className="font-bold text-slate-900 dark:text-white">
-                "तिची सुरक्षा" (Tichi Suraksha)
+                &quot;तिची सुरक्षा&quot; (Tichi Suraksha)
               </Text>{' '}
               collects <Text className="font-bold text-orange-600 dark:text-orange-400">location data</Text> to provide essential safety features:
             </>
@@ -61,7 +61,7 @@ export function ProminentDisclosureModal({
             'Verifying location accuracy for distress alerts.',
           ],
           note: 'This location data is used strictly for your emergency safety and is never sold, shared with advertisers, or used for tracking unrelated to safety features.',
-          acceptText: 'Allow Location • परवानगी द्या',
+          acceptText: 'Continue • पुढे जा',
           declineText: 'Not Now • आत्ता नको',
           acceptColor: 'bg-orange-500',
         };
@@ -81,9 +81,12 @@ export function ProminentDisclosureModal({
             'Ensures responders receive continuous location updates while an SOS is active.',
             'Tracking runs only during an active SOS alert and displays an ongoing notification.',
           ],
-          note: 'Selecting "Agree" will open the Android system dialog. Please select "Allow all the time" for continuous protection during an emergency.',
-          acceptText: 'Agree',
-          declineText: 'No Thanks',
+          note:
+            Platform.OS === 'ios'
+              ? 'Selecting "Continue" will open the iOS system dialog where you can choose your preferred permission option.'
+              : 'Selecting "Continue" will open the Android system dialog where you can choose your preferred permission option.',
+          acceptText: 'Continue • पुढे जा',
+          declineText: 'Not Now • आत्ता नको',
           acceptColor: 'bg-rose-600',
         };
 
@@ -95,7 +98,7 @@ export function ProminentDisclosureModal({
           description: (
             <>
               <Text className="font-bold text-slate-900 dark:text-white">
-                "तिची सुरक्षा" (Tichi Suraksha)
+                &quot;तिची सुरक्षा&quot; (Tichi Suraksha)
               </Text>{' '}
               requires access to your device camera:
             </>
@@ -105,7 +108,7 @@ export function ProminentDisclosureModal({
             'Ensures member authenticity and safety records within your organization.',
           ],
           note: 'Camera access is only activated when you explicitly initiate selfie capture and is never accessed without your consent.',
-          acceptText: 'Allow Camera • कॅमेरा सुरू करा',
+          acceptText: 'Continue • पुढे जा',
           declineText: 'Cancel • रद्द करा',
           acceptColor: 'bg-blue-600',
         };
@@ -118,7 +121,7 @@ export function ProminentDisclosureModal({
           description: (
             <>
               <Text className="font-bold text-slate-900 dark:text-white">
-                "तिची सुरक्षा" (Tichi Suraksha)
+                &quot;तिची सुरक्षा&quot; (Tichi Suraksha)
               </Text>{' '}
               requires access to your photo library:
             </>
@@ -128,7 +131,7 @@ export function ProminentDisclosureModal({
             'To select and upload an organization logo for your dashboard header.',
           ],
           note: 'Only the specific photo you choose to upload is processed and saved.',
-          acceptText: 'Allow Photos • फोटो निवडा',
+          acceptText: 'Continue • पुढे जा',
           declineText: 'Cancel • रद्द करा',
           acceptColor: 'bg-purple-600',
         };
@@ -145,10 +148,10 @@ export function ProminentDisclosureModal({
       onRequestClose={onDecline}
     >
       <View
-        className="flex-1 justify-center items-center px-4"
+        className="flex-1 justify-center items-center px-4 py-6"
         style={{ backgroundColor: 'rgba(15, 23, 42, 0.88)' }}
       >
-        <View className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800">
+        <View className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] p-6 sm:p-8 shadow-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800 max-h-[90%]">
           <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {/* Top Icon with Subtle Ring */}
             <View className="items-center mb-4">

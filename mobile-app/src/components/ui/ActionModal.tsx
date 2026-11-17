@@ -28,13 +28,13 @@ export function ActionModal({
   children,
 }: ActionModalProps) {
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-end bg-black/70">
+        <View className="flex-1 justify-end sm:justify-center items-center bg-black/70 p-0 sm:p-6">
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] max-h-[85%] overflow-hidden border-t border-slate-200 dark:border-slate-800 shadow-2xl"
+              className="bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2rem] w-full sm:max-w-xl max-h-[85%] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-2xl"
             >
               {/* Header */}
               <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">

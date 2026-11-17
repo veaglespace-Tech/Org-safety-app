@@ -18,6 +18,8 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { AppFooter } from '../../components/layout/Footer';
 
+import { ResponsiveContainer } from '../../components/layout/ResponsiveContainer';
+
 const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().min(1, 'Password is required').max(128, 'Password is too long'),
@@ -107,42 +109,43 @@ export default function LoginScreen() {
       >
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
-          className="px-6 pt-10 pb-2"
+          className="px-6 pt-10 pb-6"
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-      {/* Top Header Controls */}
-      <View className="flex-row items-center justify-between mb-4">
-        <TouchableOpacity
-          onPress={() => router.push('/' as any)}
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm"
-        >
-          <ArrowLeft size={18} color={isDark ? '#cbd5e1' : '#475569'} />
-        </TouchableOpacity>
-        <ThemeToggle />
-      </View>
+          <ResponsiveContainer maxWidth={520}>
+            {/* Top Header Controls */}
+            <View className="flex-row items-center justify-between mb-4">
+              <TouchableOpacity
+                onPress={() => router.push('/' as any)}
+                className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 items-center justify-center shadow-sm"
+              >
+                <ArrowLeft size={18} color={isDark ? '#cbd5e1' : '#475569'} />
+              </TouchableOpacity>
+              <ThemeToggle />
+            </View>
 
-      <View className="mb-8 items-center">
-        <Text className="text-blue-600 dark:text-blue-400 font-bold mb-3 uppercase tracking-wider text-xs bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 px-3 py-1 rounded-full">
-          Team Login
-        </Text>
-        <Text className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 text-center">
-          Welcome to ढोल - ताशा महासंघ
-        </Text>
-        <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm">
-          Sign in to access your dashboard, emergency SOS, and safety tools.
-        </Text>
-      </View>
+            <View className="mb-8 items-center">
+              <Text className="text-blue-600 dark:text-blue-400 font-bold mb-3 uppercase tracking-wider text-xs bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 px-3 py-1 rounded-full">
+                Team Login
+              </Text>
+              <Text className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2 text-center">
+                Welcome to ढोल - ताशा महासंघ
+              </Text>
+              <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm">
+                Sign in to access your dashboard, emergency SOS, and safety tools.
+              </Text>
+            </View>
 
-      {errorMessage ? (
-        <View className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <Text className="text-red-700 dark:text-red-400 font-semibold text-center text-sm">
-            {errorMessage}
-          </Text>
-        </View>
-      ) : null}
+            {errorMessage ? (
+              <View className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                <Text className="text-red-700 dark:text-red-400 font-semibold text-center text-sm">
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
 
-      <View className="space-y-4">
+            <View className="space-y-4">
         <Controller
           control={control}
           name="email"
@@ -210,6 +213,7 @@ export default function LoginScreen() {
           <AppFooter />
         </View>
       </View>
+      </ResponsiveContainer>
     </ScrollView>
     </KeyboardAvoidingView>
     </SafeAreaView>

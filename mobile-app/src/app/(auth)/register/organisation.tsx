@@ -39,6 +39,7 @@ import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AppFooter } from '@/components/layout/Footer';
 import { useAppTheme } from '@/context/ThemeContext';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 import { useRegisterOrganizationMutation } from '@/services/api/authApi';
 import { useGetPlansQuery } from '@/services/api/planApi';
 import { setSession } from '@/store/slices/authSlice';
@@ -334,7 +335,8 @@ export default function RegisterOrganisationScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-        {/* Top Header: Back Button & ThemeToggle */}
+          <ResponsiveContainer maxWidth={680}>
+          {/* Top Header: Back Button & ThemeToggle */}
         <View className="flex-row items-center justify-between mb-6">
           <TouchableOpacity
             onPress={() => {
@@ -739,6 +741,7 @@ export default function RegisterOrganisationScreen() {
         <View className="mt-8">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

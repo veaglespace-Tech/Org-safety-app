@@ -18,7 +18,7 @@ export const LiveLocationMap: React.FC<LiveLocationMapProps> = ({
   heading,
   history = [],
 }) => {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(0));
   const webViewRef = useRef<WebView>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
 

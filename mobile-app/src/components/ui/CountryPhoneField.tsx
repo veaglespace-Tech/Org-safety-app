@@ -102,9 +102,9 @@ export function CountryPhoneField({
       ) : null}
 
       {/* Country Code Selection Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <SafeAreaView className="flex-1 justify-end bg-black/60">
-          <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-5 max-h-[70%] border-t border-slate-200 dark:border-slate-800">
+      <Modal visible={modalVisible} animationType="fade" transparent>
+        <SafeAreaView className="flex-1 justify-end sm:justify-center items-center bg-black/60 p-0 sm:p-6">
+          <View className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 w-full sm:max-w-md max-h-[70%] border border-slate-200 dark:border-slate-800 shadow-2xl">
             <View className="flex-row justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800 mb-2">
               <Text className="text-lg font-bold text-slate-900 dark:text-white">Select Country Code</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} className="p-1">

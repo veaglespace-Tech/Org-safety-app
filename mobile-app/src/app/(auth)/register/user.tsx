@@ -37,6 +37,7 @@ import { SurfaceCard } from '@/components/ui/SurfaceCard';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { AppFooter } from '@/components/layout/Footer';
 import { useAppTheme } from '@/context/ThemeContext';
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer';
 import {
   useJoinOrganizationMutation,
   useValidateReferralCodeQuery,
@@ -264,23 +265,24 @@ export default function RegisterUserScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-        {/* Top Header: Back Button & ThemeToggle */}
-        <View className="flex-row items-center justify-between mb-6">
-          <TouchableOpacity
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(auth)/register');
-              }
-            }}
-            className="flex-row items-center gap-1.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
-          >
-            <ArrowLeft size={16} color={isDark ? '#38bdf8' : '#2563eb'} />
-            <Text className="text-blue-600 dark:text-sky-400 font-bold text-sm">Back</Text>
-          </TouchableOpacity>
-          <ThemeToggle />
-        </View>
+          <ResponsiveContainer maxWidth={680}>
+          {/* Top Header: Back Button & ThemeToggle */}
+          <View className="flex-row items-center justify-between mb-6">
+            <TouchableOpacity
+              onPress={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(auth)/register');
+                }
+              }}
+              className="flex-row items-center gap-1.5 bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+            >
+              <ArrowLeft size={16} color={isDark ? '#38bdf8' : '#2563eb'} />
+              <Text className="text-blue-600 dark:text-sky-400 font-bold text-sm">Back</Text>
+            </TouchableOpacity>
+            <ThemeToggle />
+          </View>
 
         {/* Header Title Section */}
         <View className="mb-6">
@@ -289,7 +291,7 @@ export default function RegisterUserScreen() {
             Join Your Team
           </Text>
           <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
-            Register with your organization's referral code
+            Register with your organization&apos;s referral code
           </Text>
         </View>
 
@@ -661,6 +663,7 @@ export default function RegisterUserScreen() {
         <View className="mt-8 mb-4">
           <AppFooter />
         </View>
+        </ResponsiveContainer>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
